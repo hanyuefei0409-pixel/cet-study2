@@ -1,0 +1,17 @@
+{
+  "sourceFilePrefix": "CET4_",
+  "examLevel": "CET-4",
+  "cet4Sets": 40,
+  "cet6ExamSets": 0,
+  "cet4CardHiddenInCET6": true,
+  "cet4NavigationBlockedInCET6": true,
+  "years": [
+    2025,
+    2024,
+    2023,
+    2022,
+    2021,
+    2020
+  ],
+  "allPathsVerified": true
+}
