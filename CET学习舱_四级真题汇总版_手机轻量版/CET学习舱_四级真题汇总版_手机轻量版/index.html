@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#3568ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="CET学习舱" />
+  <link rel="manifest" href="manifest.json" />
+  <title>CET学习舱·四级真题汇总版</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef3ff;
+      --text: #172033;
+      --muted: #7b8498;
+      --line: #e7ebf2;
+      --primary: #3568ff;
+      --primary-2: #6d8eff;
+      --green: #25b87a;
+      --orange: #ff9f43;
+      --red: #ef5b66;
+      --shadow: 0 14px 40px rgba(33, 48, 88, .10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 85% -10%, rgba(53,104,255,.18), transparent 30%),
+        var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .app { max-width: 520px; margin: 0 auto; min-height: 100vh; padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+      background: rgba(244,247,251,.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(231,235,242,.8);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 13px;
+      display: grid; place-items: center; color: #fff; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), #7f9cff);
+      box-shadow: 0 8px 18px rgba(53,104,255,.28);
+    }
+    .brand h1 { margin: 0; font-size: 17px; }
+    .brand small { display:block; color: var(--muted); margin-top: 2px; }
+    .icon-btn { width: 40px; height: 40px; border-radius: 14px; background: var(--surface); box-shadow: 0 5px 18px rgba(33,48,88,.08); }
+
+    main { padding: 16px 16px 26px; }
+    .screen { display: none; animation: fade .22s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: .4; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+    .hero {
+      color: #fff; padding: 20px; border-radius: 28px; overflow: hidden;
+      background: linear-gradient(145deg, #3568ff 0%, #496eff 58%, #7d95ff 100%);
+      box-shadow: 0 20px 45px rgba(53,104,255,.25);
+      position: relative;
+    }
+    .hero:before, .hero:after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.10); }
+    .hero:before { width: 180px; height: 180px; right: -70px; top: -90px; }
+    .hero:after { width: 110px; height: 110px; right: 40px; bottom: -70px; }
+    .hero-row { position: relative; z-index: 1; display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; }
+    .hero .label { opacity:.78; font-size:13px; }
+    .score { font-size: 42px; line-height:1; font-weight: 800; margin: 8px 0 5px; letter-spacing:-1px; }
+    .score-range { font-size: 13px; opacity:.86; }
+    .countdown { min-width: 108px; text-align:center; padding: 12px 10px; border-radius: 18px; background: rgba(255,255,255,.15); backdrop-filter: blur(12px); }
+    .countdown b { font-size: 26px; display:block; }
+    .hero-progress { position:relative; z-index:1; margin-top:18px; }
+    .progress-line { display:flex; justify-content:space-between; font-size:12px; opacity:.9; margin-bottom:7px; }
+    .bar { height: 9px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.22); }
+    .bar > span { display:block; height:100%; border-radius:999px; background:#fff; width:0; transition:width .35s ease; }
+
+    .section-head { display:flex; justify-content:space-between; align-items:center; margin: 24px 2px 12px; }
+    .section-head h2 { margin:0; font-size:18px; }
+    .section-head button, .link { color:var(--primary); background:transparent; font-size:13px; }
+
+    .card { background:var(--surface); border:1px solid rgba(231,235,242,.9); border-radius:var(--radius); box-shadow: var(--shadow); }
+    .tasks { padding: 8px 14px; }
+    .task { display:flex; align-items:center; gap:12px; padding:13px 2px; border-bottom:1px solid var(--line); }
+    .task:last-child { border-bottom:0; }
+    .task-icon { width:42px; height:42px; flex:0 0 auto; border-radius:14px; display:grid; place-items:center; font-size:19px; background:var(--surface-2); }
+    .task-main { min-width:0; flex:1; }
+    .task-title { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .task-meta { color:var(--muted); font-size:12px; margin-top:5px; }
+    .check {
+      width:28px; height:28px; flex:0 0 auto; border-radius:50%; border:2px solid #ced6e7; background:#fff;
+      display:grid; place-items:center; color:#fff; transition:.2s;
+    }
+    .task.done .check { background:var(--green); border-color:var(--green); }
+    .task.done .task-title { text-decoration:line-through; color:#98a0af; }
+
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .mini { padding:16px; min-height:118px; }
+    .mini .kicker { color:var(--muted); font-size:12px; }
+    .mini strong { display:block; font-size:24px; margin-top:8px; }
+    .delta { font-size:12px; margin-top:5px; color:var(--green); }
+    .warn { color:var(--orange); }
+
+    .weak-list { padding:8px 14px; }
+    .weak-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 2px; border-bottom:1px solid var(--line); }
+    .weak-item:last-child { border-bottom:0; }
+    .weak-name { display:flex; align-items:center; gap:10px; font-size:14px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 5px rgba(255,159,67,.12); }
+    .weak-item small { color:var(--muted); }
+
+    .module-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .module { padding:16px 10px; text-align:center; }
+    .module .emoji { width:48px; height:48px; margin:0 auto 9px; border-radius:16px; display:grid; place-items:center; font-size:23px; background:var(--surface-2); }
+    .module b { font-size:14px; }
+    .module small { display:block; color:var(--muted); margin-top:5px; font-size:11px; }
+    .module.module-disabled { opacity:.52; filter:saturate(.45); }
+    .module.module-disabled .emoji { background:#f1f2f5; }
+    .module.module-disabled small { color:#9aa1ae; }
+    .level-empty-note { margin-top:14px; padding:15px; font-size:12px; line-height:1.7; color:#6e778a; display:none; }
+    .level-empty-note.show { display:block; }
+
+    .page-title { margin:4px 2px 16px; }
+    .page-title h2 { margin:0 0 5px; font-size:25px; }
+    .page-title p { margin:0; color:var(--muted); font-size:13px; }
+
+    .tabs { display:flex; gap:8px; overflow:auto; padding:2px 0 12px; scrollbar-width:none; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .pill { white-space:nowrap; padding:9px 14px; border-radius:999px; background:#e9eef8; color:#69738a; }
+    .pill.active { background:var(--primary); color:#fff; }
+
+    .vocab-card { padding:24px; text-align:center; min-height:330px; display:flex; flex-direction:column; justify-content:center; }
+    .word { font-size:36px; font-weight:800; letter-spacing:-1px; }
+    .phonetic { color:var(--muted); margin:8px 0 18px; }
+    .meaning { font-size:18px; font-weight:700; }
+    .example { color:#596278; line-height:1.7; margin:20px 0 0; font-size:14px; }
+    .vocab-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+    .btn { padding:14px 16px; border-radius:16px; font-weight:700; }
+    .btn.secondary { background:#edf1f8; color:#596278; }
+    .btn.primary { background:var(--primary); color:#fff; box-shadow:0 10px 22px rgba(53,104,255,.22); }
+    .btn.green { background:var(--green); color:#fff; }
+    .btn.full { width:100%; }
+
+    .quiz-card { padding:18px; }
+    .quiz-card h3 { margin:0 0 15px; font-size:17px; line-height:1.5; }
+    .option { display:block; width:100%; text-align:left; padding:14px; margin:10px 0; border-radius:15px; background:#f4f6fa; color:#384258; border:1px solid transparent; }
+    .option.selected { border-color:var(--primary); background:#eef3ff; }
+    .option.correct { border-color:var(--green); background:#ecfbf4; }
+
+    .report-card { padding:18px; }
+    .metric { margin:14px 0; }
+    .metric-head { display:flex; justify-content:space-between; font-size:13px; margin-bottom:7px; }
+    .metric .bar { background:#edf1f7; }
+    .metric .bar span { background:linear-gradient(90deg,var(--primary),var(--primary-2)); }
+
+    .chart { padding:18px; }
+    .chart svg { width:100%; height:180px; overflow:visible; }
+
+    .mistake { padding:15px; margin-bottom:12px; }
+    .tag { display:inline-block; font-size:11px; padding:5px 8px; border-radius:999px; background:#fff1e3; color:#bf6f19; margin-bottom:10px; }
+    .mistake h3 { margin:0 0 8px; font-size:15px; line-height:1.45; }
+    .mistake p { margin:0; color:var(--muted); font-size:12px; }
+
+    .chat { display:flex; flex-direction:column; gap:10px; margin-bottom:80px; }
+    .bubble { max-width:86%; padding:12px 14px; border-radius:17px; font-size:14px; line-height:1.6; }
+    .bubble.ai { align-self:flex-start; background:#fff; box-shadow:var(--shadow); border-bottom-left-radius:6px; }
+    .bubble.me { align-self:flex-end; background:var(--primary); color:#fff; border-bottom-right-radius:6px; }
+    .quick { display:flex; flex-wrap:wrap; gap:8px; }
+    .quick button { padding:8px 11px; border-radius:999px; background:#eaf0ff; color:var(--primary); }
+    .chat-input { position:fixed; z-index:35; left:50%; transform:translateX(-50%); bottom:calc(74px + env(safe-area-inset-bottom)); width:min(520px,100%); padding:10px 16px; display:flex; gap:8px; background:linear-gradient(180deg,rgba(244,247,251,.2),rgba(244,247,251,.96) 30%); }
+    .chat-input input { flex:1; min-width:0; border:1px solid var(--line); border-radius:15px; padding:13px 14px; outline:none; background:#fff; }
+    .chat-input button { width:48px; border-radius:15px; color:#fff; background:var(--primary); }
+
+    .settings { padding:16px; }
+    .field { margin-bottom:15px; }
+    .field label { display:block; font-size:12px; color:var(--muted); margin-bottom:7px; }
+    .field input, .field select { width:100%; padding:13px 14px; border:1px solid var(--line); border-radius:14px; outline:none; background:#f8f9fc; color:var(--text); }
+
+    .nav {
+      position:fixed; z-index:40; bottom:0; left:50%; transform:translateX(-50%); width:min(520px,100%);
+      display:grid; grid-template-columns:repeat(5,1fr); padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.93); backdrop-filter:blur(18px); border-top:1px solid var(--line);
+    }
+    .nav button { background:transparent; color:#8c95a8; padding:7px 2px 4px; border-radius:13px; }
+    .nav button.active { color:var(--primary); background:#edf2ff; }
+    .nav .nicon { display:block; font-size:20px; margin-bottom:3px; }
+    .nav small { font-size:11px; }
+
+    .modal { position:fixed; inset:0; z-index:60; display:none; place-items:end center; background:rgba(16,24,40,.45); }
+    .modal.show { display:grid; }
+    .sheet { width:min(520px,100%); background:#fff; padding:24px 18px calc(24px + env(safe-area-inset-bottom)); border-radius:28px 28px 0 0; box-shadow:0 -20px 50px rgba(15,23,42,.18); }
+    .sheet h2 { margin:0 0 6px; }
+    .sheet p { margin:0 0 20px; color:var(--muted); font-size:13px; }
+    .seg { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .seg button { padding:14px; border-radius:15px; background:#f0f3f9; }
+    .seg button.active { color:#fff; background:var(--primary); }
+
+    .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:110px; z-index:80; background:#172033; color:#fff; padding:11px 15px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; }
+    .toast.show { opacity:1; transform:translate(-50%,-8px); }
+
+
+    .vocab-page-head { display:flex; align-items:center; gap:12px; }
+    .vocab-page-head > div { flex:1; min-width:0; }
+    .back-btn { width:42px; height:42px; flex:0 0 auto; border-radius:14px; background:#fff; color:var(--text); box-shadow:0 5px 18px rgba(33,48,88,.08); font-size:25px; }
+    .vocab-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; overflow:hidden; margin-bottom:14px; }
+    .vocab-stat { padding:15px 8px; text-align:center; background:#fff; }
+    .vocab-stat b { display:block; font-size:21px; }
+    .vocab-stat span { display:block; color:var(--muted); font-size:11px; margin-top:4px; }
+    .search-row { display:flex; gap:9px; margin-bottom:12px; }
+    .search-row input { flex:1; min-width:0; border:1px solid var(--line); border-radius:15px; padding:13px 14px; outline:none; background:#fff; color:var(--text); }
+    .small-action { padding:0 14px; border-radius:15px; background:#eaf0ff; color:var(--primary); font-weight:700; }
+    .word-card-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:18px; }
+    .source-badge { display:inline-flex; align-items:center; gap:5px; padding:6px 9px; border-radius:999px; background:#eef3ff; color:var(--primary); font-size:11px; }
+    .speaker-btn { width:42px; height:42px; border-radius:14px; background:#edf2ff; color:var(--primary); font-size:19px; }
+    .full-vocab-card { min-height:350px; text-align:left; justify-content:flex-start; }
+    .full-vocab-card .word, .full-vocab-card .phonetic { text-align:center; }
+    .full-vocab-card .meaning { margin-top:15px; font-size:16px; line-height:1.85; text-align:left; font-weight:600; word-break:break-word; }
+    .word-source { margin-top:auto; padding-top:20px; color:var(--muted); font-size:11px; text-align:center; }
+    .word-progress { margin:12px 2px 0; }
+    .word-progress .bar { background:#e5eaf3; }
+    .word-progress .bar span { background:linear-gradient(90deg,var(--primary),var(--primary-2)); }
+    .word-progress-line { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-bottom:7px; }
+    .triple-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:10px; }
+    .triple-actions .btn { padding:12px 7px; font-size:13px; }
+    .btn.orange { color:#b86712; background:#fff1df; }
+    .btn.favorite.active { color:#b36c00; background:#fff0c9; }
+    .vocab-list { margin-top:14px; overflow:hidden; }
+    .vocab-row { width:100%; padding:13px 15px; display:flex; align-items:center; gap:12px; text-align:left; background:#fff; border-bottom:1px solid var(--line); }
+    .vocab-row:last-child { border-bottom:0; }
+    .vocab-row-index { width:35px; flex:0 0 auto; color:#a0a7b5; font-size:11px; }
+    .vocab-row-main { flex:1; min-width:0; }
+    .vocab-row-main b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .vocab-row-main small { display:block; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .vocab-row-state { font-size:14px; }
+    .source-note { margin-top:14px; padding:14px 16px; color:#657087; background:#eef3ff; border-radius:17px; font-size:12px; line-height:1.7; }
+    .daily-source { display:inline-block; margin-top:10px; color:var(--primary); font-size:11px; background:#eef3ff; border-radius:999px; padding:6px 9px; }
+
+    @media (min-width: 700px) {
+      body { padding:20px 0; }
+      .app { min-height:calc(100vh - 40px); border-radius:34px; overflow:hidden; box-shadow:0 28px 80px rgba(33,48,88,.18); }
+      .nav { bottom:20px; border-radius:0 0 34px 34px; }
+    }
+
+
+    /* 四级真题库 */
+    .exam-hero { padding:18px; margin-bottom:14px; background:linear-gradient(145deg,#172b68,#315fdc 58%,#7b96ff); color:#fff; overflow:hidden; position:relative; }
+    .exam-hero:after { content:""; position:absolute; width:150px; height:150px; right:-55px; top:-65px; border-radius:50%; background:rgba(255,255,255,.10); }
+    .exam-hero h3 { position:relative; z-index:1; margin:0 0 5px; font-size:19px; }
+    .exam-hero p { position:relative; z-index:1; margin:0; opacity:.78; font-size:12px; line-height:1.65; }
+    .exam-stats { position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:15px; }
+    .exam-stat { background:rgba(255,255,255,.13); padding:10px 8px; border-radius:14px; text-align:center; backdrop-filter:blur(8px); }
+    .exam-stat b { display:block; font-size:21px; }
+    .exam-stat span { display:block; font-size:10px; opacity:.75; margin-top:2px; }
+    .exam-toolbar { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+    .exam-toolbar select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:14px; background:#fff; color:var(--text); outline:none; }
+    .exam-filter-row { display:flex; gap:8px; overflow:auto; padding:0 0 12px; scrollbar-width:none; }
+    .exam-filter-row::-webkit-scrollbar { display:none; }
+    .exam-list { display:flex; flex-direction:column; gap:13px; }
+    .exam-card { overflow:hidden; }
+    .exam-card-main { display:grid; grid-template-columns:92px 1fr; min-height:130px; }
+    .exam-thumb { width:92px; min-height:130px; object-fit:cover; background:linear-gradient(145deg,#dfe7f8,#f8faff); border-right:1px solid var(--line); }
+    .exam-thumb-fallback { width:92px; display:grid; place-items:center; font-size:29px; background:linear-gradient(145deg,#dfe7f8,#f8faff); border-right:1px solid var(--line); }
+    .exam-info { min-width:0; padding:14px 14px 12px; }
+    .exam-title-line { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .exam-title-line h3 { margin:0; font-size:16px; line-height:1.45; }
+    .exam-done { flex:0 0 auto; font-size:10px; padding:5px 7px; border-radius:999px; background:#e8f8f1; color:#148e5c; }
+    .exam-chips { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0; }
+    .exam-chip { font-size:10px; padding:5px 7px; border-radius:999px; background:#edf2ff; color:var(--primary); }
+    .exam-chip.missing { background:#f3f4f7; color:#9aa1ae; }
+    .exam-meta { color:var(--muted); font-size:11px; line-height:1.5; }
+    .exam-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px 12px 12px; border-top:1px solid var(--line); }
+    .exam-action { padding:10px 7px; border-radius:12px; font-size:12px; font-weight:700; background:#eef3ff; color:var(--primary); }
+    .exam-action.answer { background:#f0f8f4; color:#168a5b; }
+    .exam-action.audio { background:#fff3e5; color:#bd721e; }
+    .exam-action:disabled { background:#f2f3f5; color:#b1b6c1; cursor:not-allowed; }
+    .exam-more { display:flex; justify-content:space-between; gap:8px; padding:0 12px 12px; }
+    .exam-more button { flex:1; padding:9px 10px; border-radius:11px; background:#f5f7fb; color:#667086; font-size:11px; }
+    .exam-empty { padding:32px 18px; text-align:center; color:var(--muted); }
+    .resource-viewer { position:fixed; inset:0; z-index:90; background:#eef1f6; display:none; flex-direction:column; }
+    .resource-viewer.show { display:flex; }
+    .viewer-head { flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px; background:#fff; border-bottom:1px solid var(--line); }
+    .viewer-head button { width:39px; height:39px; border-radius:13px; background:#eef2f8; font-size:22px; }
+    .viewer-head div { flex:1; min-width:0; }
+    .viewer-head b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:14px; }
+    .viewer-head small { color:var(--muted); font-size:10px; }
+    .viewer-head a { color:var(--primary); text-decoration:none; font-size:12px; padding:10px 8px; }
+    .viewer-frame { flex:1; width:100%; border:0; background:#d9dee8; }
+    .audio-dock { position:fixed; z-index:85; left:50%; bottom:calc(74px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(500px,calc(100% - 24px)); background:#172033; color:#fff; padding:12px; border-radius:18px; box-shadow:0 20px 50px rgba(15,23,42,.32); display:none; }
+    .audio-dock.show { display:block; }
+    .audio-dock-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .audio-dock-top div { min-width:0; }
+    .audio-dock-top b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+    .audio-dock-top small { color:#adb7ca; font-size:10px; }
+    .audio-dock-top button { width:30px; height:30px; border-radius:10px; color:#fff; background:rgba(255,255,255,.12); }
+    .audio-dock audio { width:100%; height:36px; }
+    .cache-progress { height:7px; border-radius:999px; overflow:hidden; background:#e7ebf2; margin-top:9px; display:none; }
+    .cache-progress span { display:block; height:100%; width:0; background:var(--primary); transition:width .2s; }
+    .resource-note { margin-top:14px; padding:14px; line-height:1.7; font-size:12px; color:#687287; }
+    .home-resource { margin-top:14px; padding:16px; display:flex; align-items:center; gap:13px; text-align:left; width:100%; }
+    .home-resource-icon { width:50px; height:50px; flex:0 0 auto; border-radius:17px; display:grid; place-items:center; font-size:25px; background:#edf2ff; }
+    .home-resource-main { flex:1; min-width:0; }
+    .home-resource-main b { display:block; font-size:15px; }
+    .home-resource-main small { display:block; color:var(--muted); margin-top:5px; font-size:11px; line-height:1.5; }
+    .home-resource-arrow { color:var(--primary); font-size:21px; }
+
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div><h1>CET学习舱</h1><small id="subtitle">四级 · 标准计划</small></div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="设置">⚙️</button>
+  </header>
+
+  <main>
+    <section class="screen active" id="homeScreen">
+      <div class="hero">
+        <div class="hero-row">
+          <div>
+            <div class="label">当前预测分</div>
+            <div class="score" id="scoreText">472</div>
+            <div class="score-range">可信区间 <span id="scoreRange">461—486</span></div>
+          </div>
+          <div class="countdown"><span class="label">距离考试</span><b id="daysLeft">126</b><span>天</span></div>
+        </div>
+        <div class="hero-progress">
+          <div class="progress-line"><span>今日学习进度</span><span id="todayProgressText">0/5</span></div>
+          <div class="bar"><span id="todayProgressBar"></span></div>
+        </div>
+      </div>
+
+      <div class="section-head"><h2>今日计划</h2><button id="resetTasks">重置</button></div>
+      <div class="card tasks" id="taskList"></div>
+
+
+      <button class="card home-resource" id="homeExamLibrary" type="button">
+        <span class="home-resource-icon">🎧</span>
+        <span class="home-resource-main"><b id="homeExamTitle">四级真题听力库已更新</b><small id="homeExamMeta">2020—2025 · 40套真题 · 25段听力 · 39份答案解析</small></span>
+        <span class="home-resource-arrow">›</span>
+      </button>
+
+      <div class="section-head"><h2>学习概况</h2><button data-nav="reportScreen">查看报告</button></div>
+      <div class="grid-2">
+        <div class="card mini"><span class="kicker">连续学习</span><strong id="streakText">7天</strong><div class="delta">↑ 保持得不错</div></div>
+        <div class="card mini"><span class="kicker">本周学习</span><strong id="weekMinutes">214分钟</strong><div class="delta warn">还差 86 分钟</div></div>
+      </div>
+
+      <div class="section-head"><h2>当前薄弱点</h2><button data-nav="studyScreen">去训练</button></div>
+      <div class="card weak-list">
+        <div class="weak-item"><div class="weak-name"><span class="dot"></span><span>听力长对话后半段</span></div><small>建议精听</small></div>
+        <div class="weak-item"><div class="weak-name"><span class="dot"></span><span>阅读速度偏慢</span></div><small>多用 3 分钟</small></div>
+        <div class="weak-item"><div class="weak-name"><span class="dot"></span><span>写作观点展开不足</span></div><small>需要例证</small></div>
+      </div>
+    </section>
+
+    <section class="screen" id="studyScreen">
+      <div class="page-title"><h2>专项学习</h2><p>今天只练最值得提分的内容</p></div>
+      <div class="module-grid">
+        <button class="card module" data-module="vocab"><div class="emoji">🔤</div><b>词汇</b><small id="vocabModuleCount">完整词库</small></button>
+        <button class="card module" id="listeningModule" data-module="listening"><div class="emoji">🎧</div><b>听力</b><small id="listeningModuleMeta">25段四级真题音频</small></button>
+        <button class="card module" id="readingModule" data-module="reading"><div class="emoji">📖</div><b>阅读</b><small id="readingModuleMeta">40套四级真题</small></button>
+        <button class="card module" id="writingModule" data-module="writing"><div class="emoji">✍️</div><b>写作</b><small id="writingModuleMeta">40套四级真题</small></button>
+        <button class="card module" id="translationModule" data-module="translation"><div class="emoji">🌏</div><b>翻译</b><small id="translationModuleMeta">40套四级真题</small></button>
+        <button class="card module" id="mockModule" data-module="mock"><div class="emoji">⏱️</div><b>真题模考</b><small id="mockModuleMeta">40套四级整卷</small></button>
+      </div>
+      <div class="card level-empty-note" id="levelExamNotice">当前为六级模式。你上传的这批资料全部是四级真题，因此这里不会显示或打开任何四级试卷；六级真题需单独导入。</div>
+
+      <div class="section-head"><h2>每日词卡</h2><button id="nextWordTop">换一个</button></div>
+      <div class="card vocab-card">
+        <div class="word" id="wordText">significant</div>
+        <div class="phonetic" id="phoneticText">/sɪɡˈnɪfɪkənt/</div>
+        <div class="meaning" id="meaningText">adj. 重要的；显著的</div>
+        <div class="example" id="exampleText">词义来自你上传的词汇表</div><div class="daily-source" id="dailyWordSource">四级词汇 · 第1词</div>
+      </div>
+      <div class="vocab-actions"><button class="btn secondary" id="dontKnow">还不熟</button><button class="btn green" id="knowWord">已掌握</button></div>
+
+      <div class="section-head"><h2>阅读小测</h2><span class="link">预计 3 分钟</span></div>
+      <div class="card quiz-card">
+        <h3>“The proposal was rejected primarily because it lacked practical details.” 句中 primarily 最接近：</h3>
+        <button class="option" data-answer="a">A. 最初地</button>
+        <button class="option" data-answer="b">B. 主要地</button>
+        <button class="option" data-answer="c">C. 公开地</button>
+        <button class="option" data-answer="d">D. 偶然地</button>
+        <button class="btn primary full" id="checkAnswer">提交答案</button>
+      </div>
+    </section>
+
+
+    <section class="screen" id="vocabScreen">
+      <div class="page-title vocab-page-head">
+        <button class="back-btn" id="vocabBack" aria-label="返回">‹</button>
+        <div><h2 id="vocabTitle">四级完整词库</h2><p id="vocabSubtitle">按原乱序表学习，进度保存在本机</p></div>
+      </div>
+
+      <div class="card vocab-summary">
+        <div class="vocab-stat"><b id="vocabTotal">0</b><span>词汇总数</span></div>
+        <div class="vocab-stat"><b id="vocabMastered">0</b><span>已掌握</span></div>
+        <div class="vocab-stat"><b id="vocabReview">0</b><span>待复习</span></div>
+      </div>
+
+      <div class="tabs" id="vocabFilters">
+        <button class="pill active" data-vfilter="all">全部</button>
+        <button class="pill" data-vfilter="review">待复习</button>
+        <button class="pill" data-vfilter="mastered">已掌握</button>
+        <button class="pill" data-vfilter="favorite">收藏</button>
+      </div>
+      <div class="search-row">
+        <input id="vocabSearch" type="search" placeholder="搜索英文单词或中文释义" autocomplete="off" />
+        <button class="small-action" id="randomWord">随机</button>
+      </div>
+
+      <div class="card vocab-card full-vocab-card">
+        <div class="word-card-top">
+          <span class="source-badge" id="vocabSourceBadge">CET-4 · 原表音标</span>
+          <button class="speaker-btn" id="speakWord" aria-label="朗读单词">🔊</button>
+        </div>
+        <div class="word" id="vocabWord">plastic</div>
+        <div class="phonetic" id="vocabPhonetic">/'plæstik/</div>
+        <div class="meaning" id="vocabMeaning">adj.可塑料的；n.塑料</div>
+        <div class="word-source" id="vocabPageSource">来源：四级词汇表第1页 · 原序号1</div>
+      </div>
+
+      <div class="word-progress">
+        <div class="word-progress-line"><span id="wordPosition">1 / 4449</span><span id="wordStateText">尚未标记</span></div>
+        <div class="bar"><span id="wordProgressBar"></span></div>
+      </div>
+      <div class="vocab-actions"><button class="btn secondary" id="prevVocab">上一个</button><button class="btn primary" id="nextVocab">下一个</button></div>
+      <div class="triple-actions">
+        <button class="btn orange" id="markReview">还不熟</button>
+        <button class="btn green" id="markMastered">已掌握</button>
+        <button class="btn secondary favorite" id="toggleFavorite">☆ 收藏</button>
+      </div>
+
+      <div class="card vocab-list" id="vocabResults"></div>
+      <div class="source-note" id="vocabSourceNote">词义和四级音标来自你上传的PDF；六级原表没有音标，应用仅补充本地词典音标。浏览器语音朗读是否可离线使用，取决于手机是否已安装英语语音。</div>
+    </section>
+
+
+    <section class="screen" id="cet4ExamScreen">
+      <div class="page-title vocab-page-head">
+        <button class="back-btn" id="examBack" aria-label="返回">‹</button>
+        <div><h2>四级真题资源库</h2><p>按年份、月份和套数整理，可直接播放听力并查看整卷与解析</p></div>
+      </div>
+      <div class="card exam-hero">
+        <h3>2020—2025 四级真题</h3>
+        <p>资源全部来自你上传的压缩包。未提供独立听力或解析的套卷，会在卡片上如实标注。</p>
+        <div class="exam-stats">
+          <div class="exam-stat"><b id="examSetCount">40</b><span>真题套卷</span></div>
+          <div class="exam-stat"><b id="examAudioCount">25</b><span>听力音频</span></div>
+          <div class="exam-stat"><b id="examAnswerCount">39</b><span>答案解析</span></div>
+        </div>
+      </div>
+      <div class="exam-toolbar">
+        <select id="examYear" aria-label="选择年份"><option value="all">全部年份</option></select>
+        <select id="examMonth" aria-label="选择月份"><option value="all">全部月份</option></select>
+      </div>
+      <div class="exam-filter-row" id="examFilters">
+        <button class="pill active" data-efilter="all">全部资料</button>
+        <button class="pill" data-efilter="audio">有听力</button>
+        <button class="pill" data-efilter="complete">资料齐全</button>
+        <button class="pill" data-efilter="unfinished">未完成</button>
+        <button class="pill" data-efilter="done">已完成</button>
+      </div>
+      <div class="exam-list" id="examList"></div>
+      <div class="card resource-note">手机端可直接使用系统PDF查看器和音频播放器。部署为HTTPS网站后，可点击“离线缓存本套”；若直接将整个文件夹保存在本地服务器或电脑中，所有资源本身已经随安装包提供。</div>
+    </section>
+
+    <section class="screen" id="mistakeScreen">
+      <div class="page-title"><h2>智能错题本</h2><p>系统会按错因安排复习，而不是只收藏</p></div>
+      <div class="tabs">
+        <button class="pill active">全部</button><button class="pill">听力</button><button class="pill">阅读</button><button class="pill">写作</button><button class="pill">翻译</button>
+      </div>
+      <div class="card mistake"><span class="tag">听力 · 转折信息遗漏</span><h3>The speaker changes her opinion after “however”.</h3><p>复习建议：重听转折词后的 8 秒 · 明天再做一次</p></div>
+      <div class="card mistake"><span class="tag">阅读 · 定位错误</span><h3>你选择了与原文主题相似、但缺少依据的干扰项。</h3><p>复习建议：重新标出题干关键词和原文定位句</p></div>
+      <div class="card mistake"><span class="tag">翻译 · 主干结构</span><h3>“随着城市的发展……”不宜逐词直译。</h3><p>复习建议：先确定主语，再选择 with / as 结构</p></div>
+      <button class="btn primary full" id="reviewMistakes">开始今日错题复习</button>
+    </section>
+
+    <section class="screen" id="reportScreen">
+      <div class="page-title"><h2>学习报告</h2><p>预测分数只作学习参考，完成更多模考后会更准确</p></div>
+      <div class="card report-card">
+        <div class="metric"><div class="metric-head"><span>听力</span><b>61%</b></div><div class="bar"><span style="width:61%"></span></div></div>
+        <div class="metric"><div class="metric-head"><span>阅读</span><b>73%</b></div><div class="bar"><span style="width:73%"></span></div></div>
+        <div class="metric"><div class="metric-head"><span>写作</span><b>58%</b></div><div class="bar"><span style="width:58%"></span></div></div>
+        <div class="metric"><div class="metric-head"><span>翻译</span><b>64%</b></div><div class="bar"><span style="width:64%"></span></div></div>
+      </div>
+      <div class="section-head"><h2>七日预测分</h2><span class="link">+18分</span></div>
+      <div class="card chart">
+        <svg viewBox="0 0 330 180" role="img" aria-label="七日预测分趋势">
+          <defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3568ff" stop-opacity=".30"/><stop offset="1" stop-color="#3568ff" stop-opacity="0"/></linearGradient></defs>
+          <line x1="20" y1="145" x2="315" y2="145" stroke="#e8edf5"/><line x1="20" y1="100" x2="315" y2="100" stroke="#eef1f6"/><line x1="20" y1="55" x2="315" y2="55" stroke="#eef1f6"/>
+          <path d="M25,132 C65,128 78,122 105,116 S145,104 165,108 S205,92 225,85 S270,77 310,65 L310,145 L25,145Z" fill="url(#area)"/>
+          <path d="M25,132 C65,128 78,122 105,116 S145,104 165,108 S205,92 225,85 S270,77 310,65" fill="none" stroke="#3568ff" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="310" cy="65" r="6" fill="#fff" stroke="#3568ff" stroke-width="4"/>
+          <text x="284" y="49" font-size="12" fill="#3568ff" font-weight="700">472</text>
+          <text x="20" y="166" font-size="11" fill="#8b94a7">周一</text><text x="286" y="166" font-size="11" fill="#8b94a7">今天</text>
+        </svg>
+      </div>
+      <div class="section-head"><h2>AI诊断</h2></div>
+      <div class="card report-card" style="line-height:1.75;font-size:14px;">
+        你的阅读正确率较稳定，但平均每篇比建议时间多用约3分钟。听力失分主要集中在长对话后半段。下周建议减少重复刷词时间，每天增加10分钟精听和1篇限时阅读。
+      </div>
+    </section>
+
+    <section class="screen" id="aiScreen">
+      <div class="page-title"><h2>AI学习助手</h2><p>当前为离线演示版，可根据内置规则给出学习建议</p></div>
+      <div class="chat" id="chatBox">
+        <div class="bubble ai">你好，我是你的CET学习助手。根据目前数据，今天最优先的是听力精听，其次是限时阅读。</div>
+        <div class="quick"><button>分析我的薄弱点</button><button>生成今日计划</button><button>讲解长难句</button></div>
+      </div>
+      <div class="chat-input"><input id="chatInput" placeholder="输入问题，例如：我今天先学什么？"/><button id="sendChat">➤</button></div>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button class="active" data-nav="homeScreen"><span class="nicon">⌂</span><small>首页</small></button>
+    <button data-nav="studyScreen"><span class="nicon">◫</span><small>学习</small></button>
+    <button data-nav="mistakeScreen"><span class="nicon">✓</span><small>错题</small></button>
+    <button data-nav="reportScreen"><span class="nicon">⌁</span><small>报告</small></button>
+    <button data-nav="aiScreen"><span class="nicon">✦</span><small>助手</small></button>
+  </nav>
+</div>
+
+
+<div class="resource-viewer" id="resourceViewer">
+  <div class="viewer-head">
+    <button id="viewerClose" aria-label="关闭">‹</button>
+    <div><b id="viewerTitle">查看资料</b><small id="viewerSubtitle">PDF</small></div>
+    <a id="viewerOpen" href="#" target="_blank" rel="noopener">新窗口</a>
+  </div>
+  <iframe class="viewer-frame" id="viewerFrame" title="PDF资料"></iframe>
+</div>
+<div class="audio-dock" id="audioDock">
+  <div class="audio-dock-top"><div><b id="audioTitle">四级真题听力</b><small id="audioMeta">真题音频</small></div><button id="audioClose">×</button></div>
+  <audio id="examAudio" controls preload="metadata"></audio>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <h2>学习设置</h2><p>信息只保存在当前设备浏览器中</p>
+    <div class="field"><label>备考级别</label><div class="seg"><button id="cet4Btn">四级 CET-4</button><button id="cet6Btn">六级 CET-6</button></div></div>
+    <div class="field"><label>考试日期</label><input type="date" id="examDate" /></div>
+    <div class="field"><label>目标分数</label><input type="number" id="targetScore" min="425" max="710" step="5" /></div>
+    <div class="field"><label>每天学习时长</label><select id="dailyMinutes"><option value="30">30分钟 · 轻量</option><option value="60">60分钟 · 标准</option><option value="90">90分钟 · 冲刺</option></select></div>
+    <button class="btn primary full" id="saveSettings">保存设置</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="vocab-data.js"></script>
+<script src="exam-data.js"></script>
+<script>
+  const defaults = {
+    level: 'CET-4', target: 500, daily: 60, score: 472,
+    examDate: (()=>{ const d=new Date(); d.setDate(d.getDate()+126); return d.toISOString().slice(0,10); })(),
+    tasks: [false,false,false,false,false], streak: 7, weekMinutes: 214,
+    wordIndex4: 0, wordIndex6: 0,
+    vocabStatus: {'CET-4':{}, 'CET-6':{}}
+  };
+  const state = Object.assign({}, defaults, JSON.parse(localStorage.getItem('cetWorkbenchState') || '{}'));
+  if(!state.vocabStatus || typeof state.vocabStatus!=='object') state.vocabStatus={'CET-4':{},'CET-6':{}};
+  if(!state.vocabStatus['CET-4']) state.vocabStatus['CET-4']={};
+  if(!state.vocabStatus['CET-6']) state.vocabStatus['CET-6']={};
+  const tasks = [
+    ['🔤','高频词汇复习','20词 · 10分钟'],
+    ['🎧','长对话精听','1组 · 15分钟'],
+    ['📖','仔细阅读限时训练','1篇 · 12分钟'],
+    ['🌏','翻译句子训练','5句 · 8分钟'],
+    ['✓','错题间隔复习','8题 · 10分钟']
+  ];
+  function levelWords(){ return (window.CET_VOCAB && window.CET_VOCAB[state.level]) || []; }
+  function levelMeta(){ return (window.CET_VOCAB && window.CET_VOCAB.meta && window.CET_VOCAB.meta[state.level]) || {}; }
+  function indexProp(){ return state.level==='CET-4' ? 'wordIndex4' : 'wordIndex6'; }
+  function currentIndex(){ const list=levelWords(); const p=indexProp(); state[p]=Math.max(0,Math.min(Number(state[p]||0),Math.max(0,list.length-1))); return state[p]; }
+  function currentEntry(){ const list=levelWords(); return list[currentIndex()] || ['', '', '暂无词义', 0, 0]; }
+  function statusStore(){
+    if(!state.vocabStatus || typeof state.vocabStatus!=='object') state.vocabStatus={'CET-4':{},'CET-6':{}};
+    if(!state.vocabStatus[state.level]) state.vocabStatus[state.level]={};
+    return state.vocabStatus[state.level];
+  }
+  function entryKey(entry){ return String(entry[3]); }
+  function getWordStatus(entry=currentEntry()){ return statusStore()[entryKey(entry)] || {}; }
+  function setWordStatus(patch){
+    const e=currentEntry(), store=statusStore(), key=entryKey(e);
+    store[key]=Object.assign({},store[key]||{},patch);
+    if(!store[key].learning && !store[key].favorite) delete store[key];
+    save(); renderWord(); renderVocabScreen();
+  }
+
+
+  function save(){ localStorage.setItem('cetWorkbenchState', JSON.stringify(state)); }
+  function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window.__toast); window.__toast=setTimeout(()=>t.classList.remove('show'),1800); }
+  function daysBetween(){ const today=new Date(); today.setHours(0,0,0,0); const d=new Date(state.examDate+'T00:00:00'); return Math.max(0, Math.ceil((d-today)/86400000)); }
+  function renderLevelContent(){
+    const isCET4=state.level==='CET-4';
+    const homeCard=document.getElementById('homeExamLibrary');
+    if(homeCard){ homeCard.style.display=isCET4?'flex':'none'; homeCard.disabled=!isCET4; }
+    const notice=document.getElementById('levelExamNotice'); if(notice) notice.classList.toggle('show',!isCET4);
+    const meta={listening:'25段四级真题音频',reading:'40套四级真题',writing:'40套四级真题',translation:'40套四级真题',mock:'40套四级整卷'};
+    ['listening','reading','writing','translation','mock'].forEach(k=>{
+      const btn=document.getElementById(k+'Module'), small=document.getElementById(k+'ModuleMeta');
+      if(btn){ btn.classList.toggle('module-disabled',!isCET4); btn.setAttribute('aria-disabled',String(!isCET4)); }
+      if(small) small.textContent=isCET4?meta[k]:'六级真题未导入';
+    });
+    const active=document.querySelector('.screen.active');
+    if(!isCET4 && active && active.id==='cet4ExamScreen') navigate('studyScreen');
+  }
+  function renderHeader(){ document.getElementById('subtitle').textContent = `${state.level==='CET-4'?'四级':'六级'} · ${state.daily===30?'轻量':state.daily===90?'冲刺':'标准'}计划`; renderLevelContent(); }
+  function renderHero(){
+    document.getElementById('scoreText').textContent=state.score;
+    document.getElementById('scoreRange').textContent=`${Math.max(0,state.score-11)}—${Math.min(710,state.score+14)}`;
+    document.getElementById('daysLeft').textContent=daysBetween();
+    const done=state.tasks.filter(Boolean).length;
+    document.getElementById('todayProgressText').textContent=`${done}/${state.tasks.length}`;
+    document.getElementById('todayProgressBar').style.width=`${done/state.tasks.length*100}%`;
+    document.getElementById('streakText').textContent=state.streak+'天';
+    document.getElementById('weekMinutes').textContent=state.weekMinutes+'分钟';
+  }
+  function renderTasks(){
+    const el=document.getElementById('taskList'); el.innerHTML='';
+    tasks.forEach((t,i)=>{
+      const row=document.createElement('div'); row.className='task'+(state.tasks[i]?' done':'');
+      row.innerHTML=`<div class="task-icon">${t[0]}</div><div class="task-main"><div class="task-title">${t[1]}</div><div class="task-meta">${t[2]}</div></div><button class="check" aria-label="完成任务">✓</button>`;
+      row.querySelector('.check').onclick=()=>{ state.tasks[i]=!state.tasks[i]; if(state.tasks[i]) { state.weekMinutes+=parseInt(t[2].match(/(\d+)分钟/)?.[1]||10); toast('任务完成，继续保持'); } save(); renderTasks(); renderHero(); };
+      el.appendChild(row);
+    });
+  }
+  function prettyPhonetic(value){ return value ? `/${value.replace(/^\/+|\/+$/g,'')}/` : '音标未提供'; }
+  function renderWord(){
+    const w=currentEntry(), meta=levelMeta();
+    document.getElementById('wordText').textContent=w[0];
+    document.getElementById('phoneticText').textContent=prettyPhonetic(w[1]);
+    document.getElementById('meaningText').textContent=w[2];
+    document.getElementById('exampleText').textContent='词义来自你上传的词汇表';
+    document.getElementById('dailyWordSource').textContent=`${state.level==='CET-4'?'四级':'六级'}词汇 · 原序号${w[3]}`;
+    document.getElementById('vocabModuleCount').textContent=`${meta.count||levelWords().length}词`;
+  }
+  function navigate(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ if(b.dataset.module==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(['listening','reading','writing','translation','mock'].includes(b.dataset.module)){ openExamLibrary(b.dataset.module); } else toast(`${b.querySelector('b').textContent}模块为演示内容`); });
+
+  document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
+  function nextWord(){
+    const list=levelWords(), p=indexProp(); if(!list.length) return;
+    state[p]=(currentIndex()+1)%list.length; save(); renderWord(); renderVocabScreen();
+  }
+  document.getElementById('nextWordTop').onclick=nextWord;
+  document.getElementById('dontKnow').onclick=()=>{ setWordStatus({learning:'review'}); nextWord(); toast('已加入复习队列'); };
+  document.getElementById('knowWord').onclick=()=>{ setWordStatus({learning:'mastered'}); nextWord(); toast('掌握度已更新'); };
+
+  let selected='';
+  document.querySelectorAll('.option').forEach(o=>o.onclick=()=>{ selected=o.dataset.answer; document.querySelectorAll('.option').forEach(x=>x.classList.remove('selected')); o.classList.add('selected'); });
+  document.getElementById('checkAnswer').onclick=()=>{
+    if(!selected) return toast('请先选择答案');
+    document.querySelectorAll('.option').forEach(o=>o.classList.remove('correct'));
+    document.querySelector('.option[data-answer="b"]').classList.add('correct');
+    toast(selected==='b'?'回答正确':'正确答案是 B');
+  };
+  document.getElementById('reviewMistakes').onclick=()=>toast('已生成8题复习包');
+
+  const modal=document.getElementById('settingsModal');
+  function syncSettings(){
+    document.getElementById('examDate').value=state.examDate;
+    document.getElementById('targetScore').value=state.target;
+    document.getElementById('dailyMinutes').value=state.daily;
+    document.getElementById('cet4Btn').classList.toggle('active',state.level==='CET-4');
+    document.getElementById('cet6Btn').classList.toggle('active',state.level==='CET-6');
+  }
+  document.getElementById('settingsBtn').onclick=()=>{ syncSettings(); modal.classList.add('show'); };
+  modal.onclick=e=>{ if(e.target===modal) modal.classList.remove('show'); };
+  document.getElementById('cet4Btn').onclick=()=>{ state.level='CET-4'; syncSettings(); };
+  document.getElementById('cet6Btn').onclick=()=>{ state.level='CET-6'; syncSettings(); };
+  document.getElementById('saveSettings').onclick=()=>{
+    state.examDate=document.getElementById('examDate').value||state.examDate;
+    state.target=Number(document.getElementById('targetScore').value)||500;
+    state.daily=Number(document.getElementById('dailyMinutes').value)||60;
+    save(); modal.classList.remove('show'); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); toast('设置已保存');
+  };
+
+
+  let vocabFilter='all';
+  function filteredWordIndices(){
+    const list=levelWords(), q=(document.getElementById('vocabSearch')?.value||'').trim().toLowerCase(), store=statusStore();
+    const out=[];
+    for(let i=0;i<list.length;i++){
+      const e=list[i], st=store[entryKey(e)]||{};
+      if(vocabFilter==='review' && st.learning!=='review') continue;
+      if(vocabFilter==='mastered' && st.learning!=='mastered') continue;
+      if(vocabFilter==='favorite' && !st.favorite) continue;
+      if(q && !(e[0].toLowerCase().includes(q) || e[2].toLowerCase().includes(q))) continue;
+      out.push(i);
+    }
+    return out;
+  }
+  function goVocab(delta){
+    const indices=filteredWordIndices(), p=indexProp();
+    if(!indices.length) return toast('当前筛选没有词汇');
+    let pos=indices.indexOf(currentIndex());
+    if(pos<0) pos=0; else pos=(pos+delta+indices.length)%indices.length;
+    state[p]=indices[pos]; save(); renderWord(); renderVocabScreen();
+  }
+  function speakCurrentWord(){
+    const word=currentEntry()[0];
+    if(!('speechSynthesis' in window)) return toast('当前浏览器不支持语音朗读');
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(word); u.lang='en-US'; u.rate=.86;
+    speechSynthesis.speak(u);
+  }
+  function renderVocabResults(indices){
+    const box=document.getElementById('vocabResults'); if(!box) return;
+    const q=(document.getElementById('vocabSearch').value||'').trim();
+    if(!q && vocabFilter==='all'){ box.style.display='none'; box.innerHTML=''; return; }
+    box.style.display='block'; box.innerHTML='';
+    if(!indices.length){ box.innerHTML='<div style="padding:18px;text-align:center;color:#7b8498;font-size:13px;">没有找到匹配词汇</div>'; return; }
+    indices.slice(0,60).forEach(i=>{
+      const e=levelWords()[i], st=statusStore()[entryKey(e)]||{};
+      const row=document.createElement('button'); row.className='vocab-row';
+      row.innerHTML=`<span class="vocab-row-index">${e[3]}</span><span class="vocab-row-main"><b>${e[0]}</b><small>${e[2]}</small></span><span class="vocab-row-state">${st.favorite?'★':st.learning==='mastered'?'✓':st.learning==='review'?'↻':'›'}</span>`;
+      row.onclick=()=>{ state[indexProp()]=i; save(); renderWord(); renderVocabScreen(); window.scrollTo({top:0,behavior:'smooth'}); };
+      box.appendChild(row);
+    });
+    if(indices.length>60){ const more=document.createElement('div'); more.style.cssText='padding:12px;text-align:center;color:#7b8498;font-size:12px;'; more.textContent=`另有 ${indices.length-60} 个结果，请继续输入关键词缩小范围`; box.appendChild(more); }
+  }
+  function renderVocabScreen(){
+    const list=levelWords(); if(!list.length || !document.getElementById('vocabWord')) return;
+    const meta=levelMeta(), e=currentEntry(), st=getWordStatus(e), store=statusStore();
+    let mastered=0, review=0;
+    Object.values(store).forEach(x=>{ if(x.learning==='mastered') mastered++; if(x.learning==='review') review++; });
+    document.getElementById('vocabTitle').textContent=`${state.level==='CET-4'?'四级':'六级'}完整词库`;
+    document.getElementById('vocabSubtitle').textContent=`按上传资料原顺序学习 · 共 ${list.length} 词`;
+    document.getElementById('vocabTotal').textContent=list.length;
+    document.getElementById('vocabMastered').textContent=mastered;
+    document.getElementById('vocabReview').textContent=review;
+    document.getElementById('vocabWord').textContent=e[0];
+    document.getElementById('vocabPhonetic').textContent=prettyPhonetic(e[1]);
+    document.getElementById('vocabMeaning').textContent=e[2];
+    document.getElementById('vocabSourceBadge').textContent=`${state.level} · ${meta.phonetic||''}`;
+    document.getElementById('vocabPageSource').textContent=`来源：${state.level==='CET-4'?'四级':'六级'}词汇表第${e[4]}页 · 原序号${e[3]}`;
+    document.getElementById('wordPosition').textContent=`${currentIndex()+1} / ${list.length}`;
+    document.getElementById('wordProgressBar').style.width=`${(currentIndex()+1)/list.length*100}%`;
+    document.getElementById('wordStateText').textContent=st.learning==='mastered'?'已掌握':st.learning==='review'?'待复习':'尚未标记';
+    const fav=document.getElementById('toggleFavorite'); fav.classList.toggle('active',!!st.favorite); fav.textContent=st.favorite?'★ 已收藏':'☆ 收藏';
+    document.getElementById('markMastered').textContent=st.learning==='mastered'?'✓ 已掌握':'已掌握';
+    document.getElementById('markReview').textContent=st.learning==='review'?'↻ 待复习':'还不熟';
+    document.querySelectorAll('[data-vfilter]').forEach(b=>b.classList.toggle('active',b.dataset.vfilter===vocabFilter));
+    renderVocabResults(filteredWordIndices());
+  }
+  document.getElementById('vocabBack').onclick=()=>navigate('studyScreen');
+  document.getElementById('prevVocab').onclick=()=>goVocab(-1);
+  document.getElementById('nextVocab').onclick=()=>goVocab(1);
+  document.getElementById('markReview').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='review'?null:'review'}); toast('复习状态已更新'); };
+  document.getElementById('markMastered').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='mastered'?null:'mastered'}); toast('掌握状态已更新'); };
+  document.getElementById('toggleFavorite').onclick=()=>{ setWordStatus({favorite:!getWordStatus().favorite}); toast(getWordStatus().favorite?'已收藏':'已取消收藏'); };
+  document.getElementById('speakWord').onclick=speakCurrentWord;
+  document.getElementById('randomWord').onclick=()=>{ const list=levelWords(); state[indexProp()]=Math.floor(Math.random()*list.length); save(); renderWord(); renderVocabScreen(); };
+  document.getElementById('vocabSearch').addEventListener('input',()=>renderVocabScreen());
+  document.querySelectorAll('[data-vfilter]').forEach(b=>b.onclick=()=>{ vocabFilter=b.dataset.vfilter; renderVocabScreen(); });
+
+  function aiReply(q){
+    const s=q.toLowerCase();
+    if(s.includes('今天')||s.includes('计划')) return '今天建议按这个顺序：15分钟长对话精听 → 12分钟限时阅读 → 10分钟高频词复习 → 8分钟翻译。听力是你当前最值得优先补的部分。';
+    if(s.includes('薄弱')||s.includes('分析')) return '你目前的主要问题是：长对话后半段容易漏掉转折后的信息；阅读正确率尚可，但速度偏慢；写作论点缺少具体例证。';
+    if(s.includes('长难句')||s.includes('句子')) return '长难句可以先找谓语动词，再确定主干，最后处理从句和插入成分。把句子发给我时，正式版本可进一步接入AI接口逐句分析。';
+    if(s.includes('425')||s.includes('过')) return '不要只盯着总分。优先保证阅读稳定、听力不崩，再通过写作与翻译减少低级错误，通常比盲目刷题更有效。';
+    return '我已经记录你的问题。当前演示版使用离线规则回答；接入真实AI和题库后，可以根据你的错题、模考和学习时长给出个性化建议。';
+  }
+  function sendChat(text){
+    const q=(text||document.getElementById('chatInput').value).trim(); if(!q) return;
+    const box=document.getElementById('chatBox');
+    const me=document.createElement('div'); me.className='bubble me'; me.textContent=q; box.appendChild(me);
+    document.getElementById('chatInput').value='';
+    setTimeout(()=>{ const ai=document.createElement('div'); ai.className='bubble ai'; ai.textContent=aiReply(q); box.appendChild(ai); ai.scrollIntoView({behavior:'smooth',block:'end'}); },350);
+  }
+  document.getElementById('sendChat').onclick=()=>sendChat();
+  document.getElementById('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
+  document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>sendChat(b.textContent));
+
+
+
+  // ===== 四级真题资源库 =====
+  let examFilter='all';
+  const examState = JSON.parse(localStorage.getItem('cet4ExamProgress') || '{}');
+  function saveExamState(){ localStorage.setItem('cet4ExamProgress',JSON.stringify(examState)); }
+  function fmtBytes(n){ if(!n) return '—'; const u=['B','KB','MB','GB']; let i=0,v=n; while(v>=1024&&i<u.length-1){v/=1024;i++;} return `${v>=10||i===0?v.toFixed(0):v.toFixed(1)} ${u[i]}`; }
+  function fmtDuration(s){ if(!s) return ''; const m=Math.floor(s/60), sec=String(s%60).padStart(2,'0'); return `${m}:${sec}`; }
+  function examData(){ return (window.CET4_EXAMS && window.CET4_EXAMS.items) || []; }
+  function filteredExams(){
+    const y=document.getElementById('examYear')?.value||'all', m=document.getElementById('examMonth')?.value||'all';
+    return examData().filter(e=>{
+      if(y!=='all' && String(e.year)!==y) return false;
+      if(m!=='all' && String(e.month)!==m) return false;
+      const st=examState[e.id]||{};
+      if(examFilter==='audio' && !e.audio) return false;
+      if(examFilter==='complete' && !e.complete) return false;
+      if(examFilter==='done' && !st.done) return false;
+      if(examFilter==='unfinished' && st.done) return false;
+      return true;
+    });
+  }
+  function openExamLibrary(mode='all'){
+    if(state.level!=='CET-4'){
+      toast('当前为六级模式：这批四级真题不会出现在六级中');
+      return;
+    }
+    examFilter = mode==='listening' ? 'audio' : 'all';
+    navigate('cet4ExamScreen'); renderExamLibrary();
+  }
+  window.openExamLibrary=openExamLibrary;
+  function initExamFilters(){
+    const data=window.CET4_EXAMS; if(!data) return;
+    document.getElementById('examSetCount').textContent=data.stats.sets;
+    document.getElementById('examAudioCount').textContent=data.stats.audios;
+    document.getElementById('examAnswerCount').textContent=data.stats.answers;
+    const y=document.getElementById('examYear');
+    if(y.options.length===1) data.stats.years.forEach(v=>y.add(new Option(v+'年',v)));
+    const months=[...new Set(data.items.map(e=>e.month))].sort((a,b)=>b-a), m=document.getElementById('examMonth');
+    if(m.options.length===1) months.forEach(v=>m.add(new Option(v+'月',v)));
+  }
+  function createResourceButton(label,cls,path,title,subtitle,disabled=false){
+    const b=document.createElement('button'); b.className='exam-action '+cls; b.textContent=label; b.disabled=disabled;
+    if(!disabled) b.onclick=()=>openPdf(path,title,subtitle);
+    return b;
+  }
+  function renderExamLibrary(){
+    initExamFilters();
+    document.querySelectorAll('[data-efilter]').forEach(b=>b.classList.toggle('active',b.dataset.efilter===examFilter));
+    const box=document.getElementById('examList'); if(!box) return; box.innerHTML='';
+    const list=filteredExams();
+    if(!list.length){ box.innerHTML='<div class="card exam-empty">当前筛选没有匹配的真题资料</div>'; return; }
+    list.forEach(e=>{
+      const st=examState[e.id]||{};
+      const card=document.createElement('article'); card.className='card exam-card';
+      const main=document.createElement('div'); main.className='exam-card-main';
+      if(e.thumb){ const img=document.createElement('img'); img.className='exam-thumb'; img.src=e.thumb; img.loading='lazy'; img.alt=e.title+'试卷首页'; main.appendChild(img); }
+      else { const fb=document.createElement('div'); fb.className='exam-thumb-fallback'; fb.textContent='📄'; main.appendChild(fb); }
+      const info=document.createElement('div'); info.className='exam-info';
+      info.innerHTML=`<div class="exam-title-line"><h3>${e.title}</h3>${st.done?'<span class="exam-done">已完成</span>':''}</div>
+        <div class="exam-chips"><span class="exam-chip">真题整卷</span><span class="exam-chip ${e.audio?'':'missing'}">${e.audio?'听力音频':'无独立音频'}</span><span class="exam-chip ${e.answer?'':'missing'}">${e.answer?'答案解析':'未提供解析'}</span></div>
+        <div class="exam-meta">${e.audio?`听力 ${fmtDuration(e.audioDuration)} · ${fmtBytes(e.audioSize)}`:'压缩包中未提供本套独立音频'}<br>试卷 ${fmtBytes(e.paperSize)}${e.answer?` · 解析 ${fmtBytes(e.answerSize)}`:''}</div>`;
+      main.appendChild(info); card.appendChild(main);
+      const actions=document.createElement('div'); actions.className='exam-actions';
+      const paper=createResourceButton('查看真题','paper',e.paper,e.title,'四级真题整卷',!e.paper); actions.appendChild(paper);
+      const audio=document.createElement('button'); audio.className='exam-action audio'; audio.textContent=e.audio?'播放听力':'无音频'; audio.disabled=!e.audio; if(e.audio) audio.onclick=()=>playExamAudio(e); actions.appendChild(audio);
+      const answer=createResourceButton('答案解析','answer',e.answer,e.title+' · 答案解析','答案与详细解析',!e.answer); actions.appendChild(answer);
+      card.appendChild(actions);
+      const more=document.createElement('div'); more.className='exam-more';
+      const done=document.createElement('button'); done.textContent=st.done?'✓ 取消完成':'标记已完成'; done.onclick=()=>{ examState[e.id]=Object.assign({},examState[e.id]||{},{done:!st.done,lastOpened:Date.now()}); saveExamState(); renderExamLibrary(); toast(examState[e.id].done?'已计入学习进度':'已取消完成'); }; more.appendChild(done);
+      const cache=document.createElement('button'); cache.textContent=st.cached?'✓ 已离线缓存':'离线缓存本套'; cache.onclick=()=>cacheExamSet(e,cache); more.appendChild(cache);
+      card.appendChild(more);
+      box.appendChild(card);
+    });
+  }
+  function openPdf(path,title,subtitle){
+    if(!path) return toast('此资料未提供');
+    examState.__last={path,title,time:Date.now()}; saveExamState();
+    document.getElementById('viewerTitle').textContent=title;
+    document.getElementById('viewerSubtitle').textContent=subtitle;
+    document.getElementById('viewerFrame').src=path+'#toolbar=1&navpanes=0';
+    document.getElementById('viewerOpen').href=path;
+    document.getElementById('resourceViewer').classList.add('show');
+    document.body.style.overflow='hidden';
+  }
+  function closeViewer(){ document.getElementById('resourceViewer').classList.remove('show'); document.getElementById('viewerFrame').src='about:blank'; document.body.style.overflow=''; }
+  function playExamAudio(e){
+    const a=document.getElementById('examAudio'); a.src=e.audio; document.getElementById('audioTitle').textContent=e.title+' · 听力'; document.getElementById('audioMeta').textContent=`真题原音频 · ${fmtDuration(e.audioDuration)}`; document.getElementById('audioDock').classList.add('show'); a.play().catch(()=>{}); examState[e.id]=Object.assign({},examState[e.id]||{},{lastOpened:Date.now()}); saveExamState();
+  }
+  function closeAudio(){ const a=document.getElementById('examAudio'); a.pause(); a.removeAttribute('src'); a.load(); document.getElementById('audioDock').classList.remove('show'); }
+  async function cacheExamSet(e,btn){
+    const urls=[e.paper,e.answer,e.audio,e.thumb].filter(Boolean);
+    if(!('caches' in window) || !location.protocol.startsWith('http')) return toast('离线缓存需通过HTTPS或本地服务器打开');
+    btn.disabled=true; const old=btn.textContent; btn.textContent='缓存中 0/'+urls.length;
+    try{
+      const cache=await caches.open('cet-study-cet4-resources-v1');
+      for(let i=0;i<urls.length;i++){ const r=await fetch(urls[i]); if(!r.ok) throw new Error(urls[i]); await cache.put(urls[i],r.clone()); btn.textContent=`缓存中 ${i+1}/${urls.length}`; }
+      examState[e.id]=Object.assign({},examState[e.id]||{},{cached:true}); saveExamState(); btn.textContent='✓ 已离线缓存'; toast('本套真题已缓存');
+    }catch(err){ btn.textContent=old; btn.disabled=false; toast('缓存失败，请检查存储空间或网络'); }
+  }
+  document.getElementById('homeExamLibrary').onclick=()=>openExamLibrary('all');
+  document.getElementById('examBack').onclick=()=>navigate('studyScreen');
+  document.getElementById('examYear').onchange=renderExamLibrary;
+  document.getElementById('examMonth').onchange=renderExamLibrary;
+  document.querySelectorAll('[data-efilter]').forEach(b=>b.onclick=()=>{ examFilter=b.dataset.efilter; renderExamLibrary(); });
+  document.getElementById('viewerClose').onclick=closeViewer;
+  document.getElementById('audioClose').onclick=closeAudio;
+  window.addEventListener('popstate',()=>{ if(document.getElementById('resourceViewer').classList.contains('show')) closeViewer(); });
+  initExamFilters();
+
+
+  renderHeader(); renderHero(); renderTasks(); renderWord(); renderVocabScreen(); renderLevelContent();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>

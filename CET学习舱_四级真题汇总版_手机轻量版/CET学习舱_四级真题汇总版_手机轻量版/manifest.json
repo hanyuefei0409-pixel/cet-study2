@@ -1,0 +1,18 @@
+{
+  "name": "CET学习舱·四级真题汇总版",
+  "short_name": "CET四级真题舱",
+  "description": "四六级词汇独立切换；2020—2025四级真题、听力和解析只在CET-4模式显示。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#3568ff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
