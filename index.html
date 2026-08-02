@@ -648,7 +648,7 @@
     const data=isCET4?window.CET4_EXAMS:window.CET6_EXAMS, label=isCET4?'四级':'六级', p=window.CET_PRACTICE?.[isCET4?'cet4':'cet6'];
     if(homeCard){ homeCard.style.display='flex'; homeCard.disabled=false; }
     const notice=document.getElementById('levelExamNotice'); if(notice) notice.classList.remove('show');
-    const meta={listening:`${data?.stats.audios||0}段${label}真题音频`,reading:`${quizList().length}道原创阅读题`,writing:`${p?.writing.length||0}个写作主题`,translation:`${p?.translation.length||0}篇翻译训练`,mock:'3套完整考场模拟'};
+    const meta={listening:`${data?.stats.audios||0}段${label}真题音频`,reading:`${quizList().length}道原创阅读题`,writing:`${practiceData('writing').length}个写作主题`,translation:`${practiceData('translation').length}篇翻译训练`,mock:'8套 · 每套57项'};
     ['listening','reading','writing','translation','mock'].forEach(k=>{
       const btn=document.getElementById(k+'Module'), small=document.getElementById(k+'ModuleMeta');
       if(btn){ btn.classList.remove('module-disabled'); btn.setAttribute('aria-disabled','false'); }
@@ -706,7 +706,7 @@
 
   let quizIndex=0, quizSelected=null, quizSubmitted=false;
   const quizMistakes=JSON.parse(localStorage.getItem('cetQuizMistakes')||'[]');
-  function quizList(){ return (window.CET_QUESTIONS && window.CET_QUESTIONS[state.level==='CET-6'?'cet6':'cet4']) || []; }
+  function quizList(){const key=state.level==='CET-6'?'cet6':'cet4',base=(window.CET_QUESTIONS&&window.CET_QUESTIONS[key])||[],extra=(window.CET_FULL_MOCKS?.[key]||[]).flatMap((p,pi)=>p.reading.careful.map((q,qi)=>({...q,id:`special-${q.id}`,title:`全真阅读 ${pi+1}-${qi+1}`})));return [...base,...extra]}
   function saveQuizMistakes(){ localStorage.setItem('cetQuizMistakes',JSON.stringify(quizMistakes)); }
   function renderQuiz(){
     const list=quizList(); if(!list.length) return;
@@ -867,7 +867,7 @@
   // ===== 原创专项训练与考场模拟 =====
   let practiceType='writing', practiceCurrent=null, mockTimer=null, mockRemaining=0, mockStageIndex=0, mockPackIndex=0, mockAnswers={};
   function levelKey(){return state.level==='CET-6'?'cet6':'cet4'}
-  function practiceData(type=practiceType){return window.CET_PRACTICE?.[levelKey()]?.[type]||[]}
+  function practiceData(type=practiceType){const base=window.CET_PRACTICE?.[levelKey()]?.[type]||[],packs=window.CET_FULL_MOCKS?.[levelKey()]||[];if(type==='writing')return [...base,...packs.map((p,i)=>({id:`${p.id}-writing`,type:'writing',title:`全真写作 ${i+1}`,prompt:p.writing.prompt,minutes:30,outline:p.writing.reference,keywords:p.theme}))];if(type==='translation')return [...base,...packs.map((p,i)=>({id:`${p.id}-translation`,type:'translation',title:`全真翻译 ${i+1}`,prompt:p.translation.prompt,minutes:30,reference:p.translation.reference}))];return base}
   function openPractice(type='writing'){
     practiceType=type; practiceCurrent=null; navigate('practiceScreen');
     document.getElementById('practiceEditor').hidden=true;
