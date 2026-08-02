@@ -164,6 +164,9 @@
     .quiz-explain.show { display:block; }
     .quiz-next { display:none; margin-top:10px; }
     .quiz-next.show { display:block; }
+    .practice-list{display:grid;gap:12px}.practice-card{padding:17px}.practice-card h3{margin:0 0 7px;font-size:16px}.practice-card p{margin:0;color:var(--muted);line-height:1.6;font-size:13px}.practice-card .btn{margin-top:13px}
+    .practice-editor{min-height:190px;width:100%;resize:vertical;border:1px solid #dce3ef;border-radius:14px;padding:14px;font:inherit;line-height:1.7;background:#fbfcff;box-sizing:border-box}.practice-prompt{line-height:1.8;color:#30394d}.reference-box{display:none;margin-top:12px;background:#eef4ff;border-radius:14px;padding:14px;line-height:1.7;font-size:13px}.reference-box.show{display:block}.practice-tip{font-size:12px;color:var(--muted);margin:9px 0}
+    .mock-banner{padding:18px;background:linear-gradient(135deg,#14295f,#3568ff);color:#fff;border-radius:20px;margin-bottom:14px}.mock-banner h3{margin:0 0 7px}.mock-banner p{margin:0;opacity:.84;line-height:1.6;font-size:13px}.mock-timer{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}.mock-stage{display:flex;gap:6px;overflow:auto;margin:12px 0}.mock-stage span{white-space:nowrap;border-radius:999px;background:#edf1f8;color:#69738a;padding:7px 10px;font-size:11px}.mock-stage span.active{background:#3568ff;color:#fff}.mock-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
 
     .report-card { padding:18px; }
     .metric { margin:14px 0; }
@@ -493,6 +496,18 @@
       <div class="card resource-note">手机端可直接使用系统PDF查看器和音频播放器。部署为HTTPS网站后，可点击“离线缓存本套”；若直接将整个文件夹保存在本地服务器或电脑中，所有资源本身已经随安装包提供。</div>
     </section>
 
+    <section class="screen" id="practiceScreen">
+      <div class="page-title vocab-page-head"><button class="back-btn" id="practiceBack" aria-label="返回">‹</button><div><h2 id="practiceTitle">专项训练</h2><p id="practiceSubtitle">原创高频主题练习，答案保存在本机</p></div></div>
+      <div class="tabs" id="practiceTabs"><button class="pill active" data-ptype="writing">写作</button><button class="pill" data-ptype="translation">翻译</button><button class="pill" data-ptype="reading">阅读</button></div>
+      <div class="card practice-card" id="practiceEditor" hidden></div>
+      <div class="practice-list" id="practiceList"></div>
+    </section>
+
+    <section class="screen" id="mockScreen">
+      <div class="page-title vocab-page-head"><button class="back-btn" id="mockBack" aria-label="返回">‹</button><div><h2 id="mockTitle">四级考场模拟</h2><p>125分钟 · 写作 → 听力 → 阅读 → 翻译</p></div></div>
+      <div id="mockSetup"></div><div id="mockRunner" hidden></div>
+    </section>
+
     <section class="screen" id="mistakeScreen">
       <div class="page-title"><h2>智能错题本</h2><p>系统会按错因安排复习，而不是只收藏</p></div>
       <div class="tabs">
@@ -579,8 +594,10 @@
 
 <script src="vocab-data.js"></script>
 <script src="exam-data.js"></script>
+<script src="cet6-exam-data.js"></script>
 <script src="data/questions.js"></script>
 <script src="data/extra_questions.js"></script>
+<script src="data/practice-data.js"></script>
 <script src="config.js"></script>
 <script>
   const defaults = {
@@ -627,16 +644,17 @@
   function renderLevelContent(){
     const isCET4=state.level==='CET-4';
     const homeCard=document.getElementById('homeExamLibrary');
-    if(homeCard){ homeCard.style.display=isCET4?'flex':'none'; homeCard.disabled=!isCET4; }
-    const notice=document.getElementById('levelExamNotice'); if(notice) notice.classList.toggle('show',!isCET4);
-    const meta={listening:'25段四级真题音频',reading:'40套四级真题',writing:'40套四级真题',translation:'40套四级真题',mock:'40套四级整卷'};
+    const data=isCET4?window.CET4_EXAMS:window.CET6_EXAMS, label=isCET4?'四级':'六级', p=window.CET_PRACTICE?.[isCET4?'cet4':'cet6'];
+    if(homeCard){ homeCard.style.display='flex'; homeCard.disabled=false; }
+    const notice=document.getElementById('levelExamNotice'); if(notice) notice.classList.remove('show');
+    const meta={listening:`${data?.stats.audios||0}段${label}真题音频`,reading:`${quizList().length}道原创阅读题`,writing:`${p?.writing.length||0}个写作主题`,translation:`${p?.translation.length||0}篇翻译训练`,mock:'3套完整考场模拟'};
     ['listening','reading','writing','translation','mock'].forEach(k=>{
       const btn=document.getElementById(k+'Module'), small=document.getElementById(k+'ModuleMeta');
-      if(btn){ btn.classList.toggle('module-disabled',!isCET4); btn.setAttribute('aria-disabled',String(!isCET4)); }
-      if(small) small.textContent=isCET4?meta[k]:'六级真题未导入';
+      if(btn){ btn.classList.remove('module-disabled'); btn.setAttribute('aria-disabled','false'); }
+      if(small) small.textContent=meta[k];
     });
-    const active=document.querySelector('.screen.active');
-    if(!isCET4 && active && active.id==='cet4ExamScreen') navigate('studyScreen');
+    document.getElementById('homeExamTitle').textContent=`${label}真题听力库已更新`;
+    document.getElementById('homeExamMeta').textContent=`2020—2025 · ${data?.stats.sets||0}套真题 · ${data?.stats.audios||0}段听力 · ${data?.stats.answers||0}份答案解析`;
   }
   function renderHeader(){ document.getElementById('subtitle').textContent = `${state.level==='CET-4'?'四级':'六级'} · ${state.daily===30?'轻量':state.daily===90?'冲刺':'标准'}计划`; renderLevelContent(); }
   function renderHero(){
@@ -674,7 +692,7 @@
     window.scrollTo({top:0,behavior:'smooth'});
   }
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
-  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ if(b.dataset.module==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(b.dataset.module==='reading'){ navigate('studyScreen'); renderQuiz(); document.querySelector('.quiz-card').scrollIntoView({behavior:'smooth',block:'start'}); } else if(['listening','writing','translation','mock'].includes(b.dataset.module)){ openExamLibrary(b.dataset.module); } else toast(`${b.querySelector('b').textContent}模块为演示内容`); });
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
   document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
@@ -734,7 +752,7 @@
     state.examDate=document.getElementById('examDate').value||state.examDate;
     state.target=Number(document.getElementById('targetScore').value)||500;
     state.daily=Number(document.getElementById('dailyMinutes').value)||60;
-    save(); modal.classList.remove('show'); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); toast('设置已保存');
+    quizIndex=0; save(); modal.classList.remove('show'); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes(); toast('设置已保存');
   };
 
 
@@ -843,19 +861,55 @@
 
 
 
-  // ===== 四级真题资源库 =====
-  let examFilter='all', examViewMode='all';
-  const examState = JSON.parse(localStorage.getItem('cet4ExamProgress') || '{}');
-  function saveExamState(){ localStorage.setItem('cet4ExamProgress',JSON.stringify(examState)); }
+  // ===== 原创专项训练与考场模拟 =====
+  let practiceType='writing', practiceCurrent=null, mockTimer=null, mockRemaining=0, mockStageIndex=0;
+  function levelKey(){return state.level==='CET-6'?'cet6':'cet4'}
+  function practiceData(type=practiceType){return window.CET_PRACTICE?.[levelKey()]?.[type]||[]}
+  function openPractice(type='writing'){
+    practiceType=type; practiceCurrent=null; navigate('practiceScreen');
+    document.getElementById('practiceEditor').hidden=true;
+    document.getElementById('practiceTitle').textContent=`${state.level==='CET-6'?'六级':'四级'}${type==='writing'?'写作':type==='translation'?'翻译':'阅读'}专项`;
+    document.getElementById('practiceSubtitle').textContent='依据公开考试结构原创编写 · 高频主题预测不代表官方命题';
+    document.querySelectorAll('[data-ptype]').forEach(b=>b.classList.toggle('active',b.dataset.ptype===type)); renderPracticeList();
+  }
+  function renderPracticeList(){
+    const box=document.getElementById('practiceList'); box.innerHTML='';
+    if(practiceType==='reading'){
+      quizList().forEach((q,i)=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${i+1}. ${q.title}</h3><p>${q.passage.slice(0,115)}…</p><button class="btn primary full">开始本题</button>`;c.querySelector('button').onclick=()=>{quizIndex=i;navigate('studyScreen');renderQuiz();document.querySelector('.quiz-card').scrollIntoView({behavior:'smooth',block:'start'})};box.appendChild(c)});return;
+    }
+    practiceData().forEach((x,i)=>{const saved=localStorage.getItem(`cetPractice:${x.id}`);const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${i+1}. ${x.title}</h3><p>${x.prompt}</p><button class="btn ${saved?'secondary':'primary'} full">${saved?'继续练习':'开始练习'}</button>`;c.querySelector('button').onclick=()=>openPracticeEditor(x);box.appendChild(c)});
+  }
+  function openPracticeEditor(x){
+    practiceCurrent=x; const saved=localStorage.getItem(`cetPractice:${x.id}`)||'', editor=document.getElementById('practiceEditor'); editor.hidden=false;
+    editor.innerHTML=`<h3>${x.title}</h3><div class="practice-prompt">${x.prompt}</div><div class="practice-tip">建议用时 ${x.minutes} 分钟 · 内容自动保存在本机</div><textarea class="practice-editor" id="practiceAnswer" placeholder="在这里输入你的${x.type==='writing'?'作文':'译文'}…"></textarea><div class="mock-actions"><button class="btn secondary" id="practiceSave">保存草稿</button><button class="btn primary" id="practiceReference">完成并自评</button></div><div class="reference-box" id="practiceReferenceBox">${x.type==='writing'?`参考结构：${x.outline}<br>建议词组：${x.keywords}`:`参考译文：${x.reference}`}<br><small>参考答案用于自评，不是唯一表达。</small></div>`;
+    document.getElementById('practiceAnswer').value=saved; document.getElementById('practiceAnswer').oninput=e=>localStorage.setItem(`cetPractice:${x.id}`,e.target.value);
+    document.getElementById('practiceSave').onclick=()=>{localStorage.setItem(`cetPractice:${x.id}`,document.getElementById('practiceAnswer').value);toast('草稿已保存在本机')};
+    document.getElementById('practiceReference').onclick=()=>{document.getElementById('practiceReferenceBox').classList.add('show');toast('请按结构、准确性和语言三项自评')}; editor.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  document.querySelectorAll('[data-ptype]').forEach(b=>b.onclick=()=>openPractice(b.dataset.ptype));
+  document.getElementById('practiceBack').onclick=()=>navigate('studyScreen');
+  function openMockSetup(){navigate('mockScreen'); clearInterval(mockTimer); const packs=window.CET_PRACTICE?.mock?.[levelKey()]||[], box=document.getElementById('mockSetup');document.getElementById('mockRunner').hidden=true;document.getElementById('mockTitle').textContent=`${state.level==='CET-6'?'六级':'四级'}考场模拟`;box.hidden=false;box.innerHTML='<div class="mock-banner"><h3>真实顺序 · 125分钟</h3><p>写作30分钟、听力约30分钟、阅读40分钟、翻译30分钟。题目为原创高频主题练习，听力阶段使用你上传的真题原音频。</p></div><div class="practice-list"></div>';const list=box.querySelector('.practice-list');packs.forEach((p,i)=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${p.title}</h3><p>${p.theme}</p><button class="btn primary full">进入考场</button>`;c.querySelector('button').onclick=()=>startMock(i);list.appendChild(c)});}
+  function startMock(packIndex){mockStageIndex=0;mockRemaining=125*60;document.getElementById('mockSetup').hidden=true;document.getElementById('mockRunner').hidden=false;renderMock(packIndex);clearInterval(mockTimer);mockTimer=setInterval(()=>{mockRemaining=Math.max(0,mockRemaining-1);const t=document.getElementById('mockClock');if(t)t.textContent=formatClock(mockRemaining);if(!mockRemaining){clearInterval(mockTimer);finishMock()}},1000)}
+  function formatClock(s){return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+  function renderMock(packIndex){const stages=['写作','听力','阅读','翻译'], box=document.getElementById('mockRunner'), w=practiceData('writing')[packIndex%practiceData('writing').length],t=practiceData('translation')[packIndex%practiceData('translation').length],q=quizList()[packIndex%quizList().length],data=examData().filter(e=>e.audio),audio=data[packIndex%Math.max(1,data.length)];let body='';if(mockStageIndex===0)body=`<h3>${w.title}</h3><p class="practice-prompt">${w.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="写作答题区"></textarea>`;if(mockStageIndex===1)body=`<h3>听力理解</h3><p class="practice-prompt">正式考试中录音只播放一次。请先预读试卷，再开始播放。</p><button class="btn primary full" id="mockAudio">▶ 播放真题听力</button>`;if(mockStageIndex===2)body=`<h3>${q.title}</h3><p class="practice-prompt">${q.passage}</p><p><b>${q.q}</b></p>${q.opts.map((o,i)=>`<label class="option"><input type="radio" name="mq" value="${i}"> ${String.fromCharCode(65+i)}. ${o}</label>`).join('')}`;if(mockStageIndex===3)body=`<h3>${t.title}</h3><p class="practice-prompt">${t.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="翻译答题区"></textarea>`;box.innerHTML=`<div class="mock-banner"><div class="mock-timer" id="mockClock">${formatClock(mockRemaining)}</div><p>剩余时间 · 离开页面前会保留本次答案</p></div><div class="mock-stage">${stages.map((s,i)=>`<span class="${i===mockStageIndex?'active':''}">${i+1} ${s}</span>`).join('')}</div><div class="card practice-card">${body}<div class="mock-actions"><button class="btn secondary" id="mockQuit">暂存退出</button><button class="btn primary" id="mockNext">${mockStageIndex===3?'交卷':'下一部分'}</button></div></div>`;if(document.getElementById('mockAudio'))document.getElementById('mockAudio').onclick=()=>audio?playExamAudio(audio):toast('本级别暂无听力音频');document.getElementById('mockQuit').onclick=()=>{clearInterval(mockTimer);toast('本次模考已暂存');openMockSetup()};document.getElementById('mockNext').onclick=()=>{if(mockStageIndex<3){mockStageIndex++;renderMock(packIndex)}else finishMock()};}
+  function finishMock(){clearInterval(mockTimer);localStorage.setItem(`cetMockLast:${levelKey()}`,JSON.stringify({finishedAt:Date.now(),remaining:mockRemaining}));document.getElementById('mockRunner').innerHTML='<div class="mock-banner"><h3>交卷成功</h3><p>本次完整模考已记录。建议立即回看写作结构、阅读错因和翻译表达。</p></div><button class="btn primary full" id="mockAgain">返回模考列表</button>';document.getElementById('mockAgain').onclick=openMockSetup;toast('模考记录已保存')}
+  document.getElementById('mockBack').onclick=()=>{clearInterval(mockTimer);navigate('studyScreen')};
+
+  // ===== 四六级真题资源库 =====
+  let examFilter='all', examViewMode='all', examFilterLevel='';
+  const examState = JSON.parse(localStorage.getItem('cetExamProgress') || localStorage.getItem('cet4ExamProgress') || '{}');
+  function saveExamState(){ localStorage.setItem('cetExamProgress',JSON.stringify(examState)); }
   function fmtBytes(n){ if(!n) return '—'; const u=['B','KB','MB','GB']; let i=0,v=n; while(v>=1024&&i<u.length-1){v/=1024;i++;} return `${v>=10||i===0?v.toFixed(0):v.toFixed(1)} ${u[i]}`; }
   function fmtDuration(s){ if(!s) return ''; const m=Math.floor(s/60), sec=String(s%60).padStart(2,'0'); return `${m}:${sec}`; }
-  function examData(){ return (window.CET4_EXAMS && window.CET4_EXAMS.items) || []; }
+  function examSource(){return state.level==='CET-6'?window.CET6_EXAMS:window.CET4_EXAMS}
+  function examData(){ return (examSource() && examSource().items) || []; }
+  function examKey(e){return `${state.level}:${e.id}`}
   function filteredExams(){
     const y=document.getElementById('examYear')?.value||'all', m=document.getElementById('examMonth')?.value||'all';
     return examData().filter(e=>{
       if(y!=='all' && String(e.year)!==y) return false;
       if(m!=='all' && String(e.month)!==m) return false;
-      const st=examState[e.id]||{};
+      const st=examState[examKey(e)]||{};
       if(examFilter==='audio' && !e.audio) return false;
       if(examFilter==='complete' && !e.complete) return false;
       if(examFilter==='done' && !st.done) return false;
@@ -864,17 +918,14 @@
     });
   }
   function openExamLibrary(mode='all'){
-    if(state.level!=='CET-4'){
-      toast('当前为六级模式：这批四级真题不会出现在六级中');
-      return;
-    }
+    const label=state.level==='CET-6'?'六级':'四级', data=examSource();
     examViewMode=mode; examFilter = mode==='listening' ? 'audio' : 'all';
     navigate('cet4ExamScreen');
     const listeningOnly=mode==='listening';
-    document.getElementById('examPageTitle').textContent=listeningOnly?'四级听力专项':'四级真题资源库';
+    document.getElementById('examPageTitle').textContent=listeningOnly?`${label}听力专项`:`${label}真题资源库`;
     document.getElementById('examPageSubtitle').textContent=listeningOnly?'只显示有录音的真题，点击即可在站内播放':'按年份、月份和套数整理，可直接播放听力并查看整卷与解析';
-    document.getElementById('examHeroTitle').textContent=listeningOnly?'2020—2025 四级听力':'2020—2025 四级真题';
-    document.getElementById('examHeroDesc').textContent=listeningOnly?'当前页面仅保留25段真题听力及播放入口。':'资源全部来自你上传的资料，缺失的音频或解析会如实标注。';
+    document.getElementById('examHeroTitle').textContent=listeningOnly?`2020—2025 ${label}听力`:`2020—2025 ${label}真题`;
+    document.getElementById('examHeroDesc').textContent=listeningOnly?`当前页面只显示${data?.stats.audios||0}段有录音的真题。`:'资源全部来自你上传的资料，缺失的音频或解析会如实标注。';
     document.getElementById('examFilters').style.display=listeningOnly?'none':'flex';
     document.querySelectorAll('.exam-stat').forEach((el,i)=>el.style.display=listeningOnly&&i!==1?'none':'block');
     document.querySelector('.resource-note').style.display=listeningOnly?'none':'block';
@@ -882,14 +933,15 @@
   }
   window.openExamLibrary=openExamLibrary;
   function initExamFilters(){
-    const data=window.CET4_EXAMS; if(!data) return;
+    const data=examSource(); if(!data) return;
     document.getElementById('examSetCount').textContent=data.stats.sets;
     document.getElementById('examAudioCount').textContent=data.stats.audios;
     document.getElementById('examAnswerCount').textContent=data.stats.answers;
     const y=document.getElementById('examYear');
-    if(y.options.length===1) data.stats.years.forEach(v=>y.add(new Option(v+'年',v)));
+    if(examFilterLevel===state.level) return; examFilterLevel=state.level;
+    y.innerHTML='<option value="all">全部年份</option>'; data.stats.years.forEach(v=>y.add(new Option(v+'年',v)));
     const months=[...new Set(data.items.map(e=>e.month))].sort((a,b)=>b-a), m=document.getElementById('examMonth');
-    if(m.options.length===1) months.forEach(v=>m.add(new Option(v+'月',v)));
+    m.innerHTML='<option value="all">全部月份</option>'; months.forEach(v=>m.add(new Option(v+'月',v)));
   }
   function createResourceButton(label,cls,path,title,subtitle,disabled=false){
     const b=document.createElement('button'); b.className='exam-action '+cls; b.textContent=label; b.disabled=disabled;
@@ -903,7 +955,7 @@
     const list=filteredExams();
     if(!list.length){ box.innerHTML='<div class="card exam-empty">当前筛选没有匹配的真题资料</div>'; return; }
     list.forEach(e=>{
-      const st=examState[e.id]||{};
+      const st=examState[examKey(e)]||{};
       const card=document.createElement('article'); card.className='card exam-card';
       const main=document.createElement('div'); main.className='exam-card-main';
       if(e.thumb){ const img=document.createElement('img'); img.className='exam-thumb'; img.src=e.thumb; img.loading='lazy'; img.alt=e.title+'试卷首页'; main.appendChild(img); }
@@ -914,13 +966,13 @@
         <div class="exam-meta">${e.audio?`听力 ${fmtDuration(e.audioDuration)} · ${fmtBytes(e.audioSize)}`:'压缩包中未提供本套独立音频'}<br>试卷 ${fmtBytes(e.paperSize)}${e.answer?` · 解析 ${fmtBytes(e.answerSize)}`:''}</div>`;
       main.appendChild(info); card.appendChild(main);
       const actions=document.createElement('div'); actions.className='exam-actions';
-      const paper=createResourceButton('查看真题','paper',e.paper,e.title,'四级真题整卷',!e.paper); if(examViewMode!=='listening')actions.appendChild(paper);
+      const paper=createResourceButton('查看真题','paper',e.paper,e.title,`${state.level==='CET-6'?'六级':'四级'}真题整卷`,!e.paper); if(examViewMode!=='listening')actions.appendChild(paper);
       const audio=document.createElement('button'); audio.className='exam-action audio'; audio.textContent=e.audio?'播放听力':'无音频'; audio.disabled=!e.audio; if(e.audio) audio.onclick=()=>playExamAudio(e); actions.appendChild(audio);
       const answer=createResourceButton('答案解析','answer',e.answer,e.title+' · 答案解析','答案与详细解析',!e.answer); if(examViewMode!=='listening')actions.appendChild(answer);
       if(examViewMode==='listening') actions.style.gridTemplateColumns='1fr';
       card.appendChild(actions);
       const more=document.createElement('div'); more.className='exam-more';
-      const done=document.createElement('button'); done.textContent=st.done?'✓ 取消完成':'标记已完成'; done.onclick=()=>{ examState[e.id]=Object.assign({},examState[e.id]||{},{done:!st.done,lastOpened:Date.now()}); saveExamState(); renderExamLibrary(); toast(examState[e.id].done?'已计入学习进度':'已取消完成'); }; more.appendChild(done);
+      const done=document.createElement('button'); done.textContent=st.done?'✓ 取消完成':'标记已完成'; done.onclick=()=>{ const k=examKey(e); examState[k]=Object.assign({},examState[k]||{},{done:!st.done,lastOpened:Date.now()}); saveExamState(); renderExamLibrary(); toast(examState[k].done?'已计入学习进度':'已取消完成'); }; more.appendChild(done);
       const cache=document.createElement('button'); cache.textContent=st.cached?'✓ 已离线缓存':'离线缓存本套'; cache.onclick=()=>cacheExamSet(e,cache); more.appendChild(cache);
       card.appendChild(more);
       box.appendChild(card);
@@ -959,7 +1011,7 @@
   }
   async function openPdf(path,title,subtitle){
     if(!path) return toast('此资料未提供');
-    examState.__last={path,title,time:Date.now()}; saveExamState();
+    examState.__last={path,title,time:Date.now(),level:state.level}; saveExamState();
     document.getElementById('viewerTitle').textContent=title;
     document.getElementById('viewerSubtitle').textContent=subtitle;
     document.getElementById('resourceViewer').classList.add('show');
@@ -980,7 +1032,7 @@
   }
   function closeViewer(){ ++pdfOpenToken; if(pdfRenderTask) try{pdfRenderTask.cancel();}catch(_){ } if(pdfDocument) try{pdfDocument.destroy();}catch(_){ } pdfDocument=null; document.getElementById('resourceViewer').classList.remove('show'); document.body.style.overflow=''; }
   function playExamAudio(e){
-    const a=document.getElementById('examAudio'); a.src=e.audio; document.getElementById('audioTitle').textContent=e.title+' · 听力'; document.getElementById('audioMeta').textContent=`真题原音频 · ${fmtDuration(e.audioDuration)}`; document.getElementById('audioDock').classList.add('show'); a.play().catch(()=>{}); examState[e.id]=Object.assign({},examState[e.id]||{},{lastOpened:Date.now()}); saveExamState();
+    const a=document.getElementById('examAudio'); a.src=e.audio; document.getElementById('audioTitle').textContent=e.title+' · 听力'; document.getElementById('audioMeta').textContent=`真题原音频 · ${fmtDuration(e.audioDuration)}`; document.getElementById('audioDock').classList.add('show'); a.play().catch(()=>{}); const k=examKey(e); examState[k]=Object.assign({},examState[k]||{},{lastOpened:Date.now()}); saveExamState();
   }
   function closeAudio(){ const a=document.getElementById('examAudio'); a.pause(); a.removeAttribute('src'); a.load(); document.getElementById('audioDock').classList.remove('show'); }
   async function cacheExamSet(e,btn){
@@ -988,9 +1040,9 @@
     if(!('caches' in window) || !location.protocol.startsWith('http')) return toast('离线缓存需通过HTTPS或本地服务器打开');
     btn.disabled=true; const old=btn.textContent; btn.textContent='缓存中 0/'+urls.length;
     try{
-      const cache=await caches.open('cet-study-cet4-resources-v1');
+      const cache=await caches.open(`cet-study-${levelKey()}-resources-v2`);
       for(let i=0;i<urls.length;i++){ const r=await fetch(urls[i]); if(!r.ok) throw new Error(urls[i]); await cache.put(urls[i],r.clone()); btn.textContent=`缓存中 ${i+1}/${urls.length}`; }
-      examState[e.id]=Object.assign({},examState[e.id]||{},{cached:true}); saveExamState(); btn.textContent='✓ 已离线缓存'; toast('本套真题已缓存');
+      const k=examKey(e); examState[k]=Object.assign({},examState[k]||{},{cached:true}); saveExamState(); btn.textContent='✓ 已离线缓存'; toast('本套真题已缓存');
     }catch(err){ btn.textContent=old; btn.disabled=false; toast('缓存失败，请检查存储空间或网络'); }
   }
   document.getElementById('homeExamLibrary').onclick=()=>openExamLibrary('all');
