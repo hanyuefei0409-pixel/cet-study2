@@ -929,9 +929,12 @@
   let pdfDocument=null, pdfPageNumber=1, pdfZoom=1, pdfRenderTask=null, pdfOpenToken=0;
   let pdfJsPromise=null;
   function getPdfJs(){
-    if(!pdfJsPromise) pdfJsPromise=import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.min.mjs').then(mod=>{
-      mod.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
-      return mod;
+    if(!pdfJsPromise) pdfJsPromise=new Promise((resolve,reject)=>{
+      if(window.pdfjsLib){ window.pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.js'; return resolve(window.pdfjsLib); }
+      const script=document.createElement('script'); script.src='./vendor/pdf.min.js'; script.async=true;
+      script.onload=()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.js'; resolve(window.pdfjsLib); };
+      script.onerror=()=>reject(new Error('内置 PDF 阅读器加载失败'));
+      document.head.appendChild(script);
     });
     return pdfJsPromise;
   }
