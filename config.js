@@ -1,5 +1,5 @@
 window.CET_CONFIG={
-  // AI 后台部署完成后，只填写 Worker 地址。API Key 只能保存在后台密钥变量中。
-  aiEnabled:false,
-  aiEndpoint:""
+  // Cloudflare Workers AI 后台。模型权限通过 AI Binding 提供，前端不保存任何密钥。
+  aiEnabled:true,
+  aiEndpoint:"https://cet-study-ai-live.hanyuefei0409.workers.dev"
 };
