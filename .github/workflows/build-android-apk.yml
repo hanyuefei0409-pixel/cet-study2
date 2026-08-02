@@ -22,6 +22,80 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+      - name: Create Android wrapper project
+        working-directory: .
+        run: |
+          mkdir -p android-app/app/src/main/java/com/dan/cetstudy
+          mkdir -p android-app/app/src/main/res/values
+          mkdir -p android-app/app/src/main/res/drawable
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = 'DanCETStudy'
+          include ':app'
+          EOF
+          cat > android-app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' version '8.5.2' apply false }
+          EOF
+          cat > android-app/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'com.dan.cetstudy'
+            compileSdk 35
+            defaultConfig {
+              applicationId 'com.dan.cetstudy'
+              minSdk 23
+              targetSdk 35
+              versionCode 19
+              versionName '1.9.0'
+            }
+          }
+          EOF
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <application android:allowBackup="true" android:icon="@drawable/launcher_background" android:label="丹·CET学习舱" android:supportsRtl="true" android:theme="@style/AppTheme" android:usesCleartextTraffic="false">
+              <activity android:name=".MainActivity" android:exported="true">
+                <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+          cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources><style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">false</item><item name="android:colorAccent">#315CF4</item></style></resources>
+          EOF
+          cat > android-app/app/src/main/res/drawable/launcher_background.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle"><gradient android:startColor="#315CF4" android:endColor="#FF84AD" android:angle="315" /><corners android:radius="96dp" /></shape>
+          EOF
+          cat > android-app/app/src/main/java/com/dan/cetstudy/MainActivity.java <<'EOF'
+          package com.dan.cetstudy;
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          public class MainActivity extends Activity {
+            private static final String APP_URL="https://cet-study2-mobile.pages.dev/?source=android-app";
+            private WebView webView;
+            @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setStatusBarColor(Color.rgb(49,92,244));webView=new WebView(this);setContentView(webView);WebSettings s=webView.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setDatabaseEnabled(true);s.setMediaPlaybackRequiresUserGesture(false);s.setAllowFileAccess(false);s.setAllowContentAccess(false);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);webView.setWebChromeClient(new WebChromeClient());webView.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){Uri u=r.getUrl();if("cet-study2-mobile.pages.dev".equals(u.getHost()))return false;startActivity(new Intent(Intent.ACTION_VIEW,u));return true;}});if(state==null)webView.loadUrl(APP_URL);else webView.restoreState(state);}
+            @Override protected void onSaveInstanceState(Bundle out){webView.saveState(out);super.onSaveInstanceState(out);}
+            @Override public void onBackPressed(){if(webView.canGoBack())webView.goBack();else super.onBackPressed();}
+            @Override protected void onDestroy(){webView.destroy();super.onDestroy();}
+          }
+          EOF
       - name: Build installable APK
         run: gradle :app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
