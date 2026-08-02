@@ -588,6 +588,8 @@
     <div class="field"><label>目标分数</label><input type="number" id="targetScore" min="425" max="710" step="5" /></div>
     <div class="field"><label>每天学习时长</label><select id="dailyMinutes"><option value="30">30分钟 · 轻量</option><option value="60">60分钟 · 标准</option><option value="90">90分钟 · 冲刺</option></select></div>
     <button class="btn primary full" id="saveSettings">保存设置</button>
+    <button class="btn secondary full" id="installApp" style="margin-top:10px">安装“丹·CET学习舱”到手机</button>
+    <p class="practice-tip" id="installHint">安装后可从桌面直接打开，使用体验与普通 App 相同。</p>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -688,11 +690,17 @@
     document.getElementById('dailyWordSource').textContent=`${state.level==='CET-4'?'四级':'六级'}词汇 · 原序号${w[3]}`;
     document.getElementById('vocabModuleCount').textContent=`${meta.count||levelWords().length}词`;
   }
+  let restoringHistory=false;
+  history.replaceState({screen:document.querySelector('.screen.active')?.id||'homeScreen'},'',location.href);
   function navigate(id){
+    const current=document.querySelector('.screen.active')?.id;
+    if(!restoringHistory&&current!==id) history.pushState({screen:id},'');
     document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));
     window.scrollTo({top:0,behavior:'smooth'});
   }
+  function pushSubpage(view,extra={}){if(!restoringHistory)history.pushState({screen:document.querySelector('.screen.active')?.id||'homeScreen',view,...extra},'')}
+  function appBack(fallback='homeScreen'){if(history.length>1)history.back();else{restoringHistory=true;navigate(fallback);restoringHistory=false}}
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
   document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
@@ -748,16 +756,20 @@
     document.getElementById('cet4Btn').classList.toggle('active',state.level==='CET-4');
     document.getElementById('cet6Btn').classList.toggle('active',state.level==='CET-6');
   }
-  document.getElementById('settingsBtn').onclick=()=>{ syncSettings(); modal.classList.add('show'); };
-  modal.onclick=e=>{ if(e.target===modal) modal.classList.remove('show'); };
+  document.getElementById('settingsBtn').onclick=()=>{ syncSettings(); modal.classList.add('show'); pushSubpage('settings'); };
+  modal.onclick=e=>{ if(e.target===modal) appBack(); };
   document.getElementById('cet4Btn').onclick=()=>{ state.level='CET-4'; syncSettings(); };
   document.getElementById('cet6Btn').onclick=()=>{ state.level='CET-6'; syncSettings(); };
   document.getElementById('saveSettings').onclick=()=>{
     state.examDate=document.getElementById('examDate').value||state.examDate;
     state.target=Number(document.getElementById('targetScore').value)||500;
     state.daily=Number(document.getElementById('dailyMinutes').value)||60;
-    quizIndex=0; save(); modal.classList.remove('show'); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes(); toast('设置已保存');
+    quizIndex=0; save(); appBack(); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes(); toast('设置已保存');
   };
+  let deferredInstallPrompt=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installHint').textContent='当前设备支持一键安装，点击上方按钮即可。'});
+  window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installHint').textContent='已安装，可以从手机桌面直接打开。';toast('丹·CET学习舱安装成功')});
+  document.getElementById('installApp').onclick=async()=>{if(deferredInstallPrompt){await deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;return}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);toast(ios?'请点浏览器“分享”→“添加到主屏幕”':'请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”')};
 
 
   let vocabFilter='all';
@@ -827,7 +839,7 @@
     document.querySelectorAll('[data-vfilter]').forEach(b=>b.classList.toggle('active',b.dataset.vfilter===vocabFilter));
     renderVocabResults(filteredWordIndices());
   }
-  document.getElementById('vocabBack').onclick=()=>navigate('studyScreen');
+  document.getElementById('vocabBack').onclick=()=>appBack('studyScreen');
   document.getElementById('prevVocab').onclick=()=>goVocab(-1);
   document.getElementById('nextVocab').onclick=()=>goVocab(1);
   document.getElementById('markReview').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='review'?null:'review'}); toast('复习状态已更新'); };
@@ -886,6 +898,7 @@
     practiceData().forEach((x,i)=>{const saved=localStorage.getItem(`cetPractice:${x.id}`);const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${i+1}. ${x.title}</h3><p>${x.prompt}</p><button class="btn ${saved?'secondary':'primary'} full">${saved?'继续练习':'开始练习'}</button>`;c.querySelector('button').onclick=()=>openPracticeEditor(x);box.appendChild(c)});
   }
   function openPracticeEditor(x){
+    pushSubpage('practice-editor',{practiceType});
     practiceCurrent=x; const saved=localStorage.getItem(`cetPractice:${x.id}`)||'', editor=document.getElementById('practiceEditor'); editor.hidden=false; document.getElementById('practiceList').hidden=true; document.getElementById('practiceTabs').hidden=true;
     editor.innerHTML=`<h3>${x.title}</h3><div class="practice-prompt">${x.prompt}</div><div class="practice-tip">建议用时 ${x.minutes} 分钟 · 内容自动保存在本机</div><textarea class="practice-editor" id="practiceAnswer" placeholder="在这里输入你的${x.type==='writing'?'作文':'译文'}…"></textarea><div class="mock-actions"><button class="btn secondary" id="practiceSave">保存草稿</button><button class="btn primary" id="practiceReference">完成并自评</button></div><div class="reference-box" id="practiceReferenceBox">${x.type==='writing'?`参考结构：${x.outline}<br>建议词组：${x.keywords}`:`参考译文：${x.reference}`}<br><small>参考答案用于自评，不是唯一表达。</small></div>`;
     document.getElementById('practiceAnswer').value=saved; document.getElementById('practiceAnswer').oninput=e=>localStorage.setItem(`cetPractice:${x.id}`,e.target.value);
@@ -893,7 +906,7 @@
     document.getElementById('practiceReference').onclick=()=>{document.getElementById('practiceReferenceBox').classList.add('show');toast('请按结构、准确性和语言三项自评')}; editor.scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-ptype]').forEach(b=>b.onclick=()=>openPractice(b.dataset.ptype));
-  document.getElementById('practiceBack').onclick=()=>{const editor=document.getElementById('practiceEditor');if(!editor.hidden){editor.hidden=true;document.getElementById('practiceList').hidden=false;document.getElementById('practiceTabs').hidden=false;renderPracticeList()}else navigate('studyScreen')};
+  document.getElementById('practiceBack').onclick=()=>appBack('studyScreen');
   function mockPacks(){return window.CET_FULL_MOCKS?.[levelKey()]||[]}
   function openMockSetup(){navigate('mockScreen');clearInterval(mockTimer);const packs=mockPacks(),box=document.getElementById('mockSetup');document.getElementById('mockRunner').hidden=true;document.getElementById('mockTitle').textContent=`${state.level==='CET-6'?'六级':'四级'}考场模拟`;box.hidden=false;box.innerHTML='<div class="mock-banner"><h3>完整结构 · 57项 · 125分钟</h3><p>写作1篇、听力25题、阅读30题、翻译1段。所有模拟内容均按官方结构原创，答案与解析交卷后统一显示。</p></div><div class="practice-list"></div>';const list=box.querySelector('.practice-list');packs.forEach((p,i)=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${p.title}</h3><p>${p.theme} · 55道客观题</p><button class="btn primary full">进入考场</button>`;c.querySelector('button').onclick=()=>startMock(i);list.appendChild(c)});}
   const openMockSetupBase=openMockSetup;
@@ -904,12 +917,14 @@
   function saveMockDraft(){localStorage.setItem(`cetMockDraft:${levelKey()}:${mockPackIndex}`,JSON.stringify(mockAnswers))}
   function renderMock(){const stages=['写作','听力','阅读','翻译'],box=document.getElementById('mockRunner'),p=mockPacks()[mockPackIndex];let body='';if(mockStageIndex===0)body=`<h3>写作（1题）</h3><p class="practice-prompt">${p.writing.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="写作答题区">${mockAnswers.writing||''}</textarea>`;if(mockStageIndex===1){body=`<h3>听力理解（25题）</h3><p class="practice-prompt">点击播放后请保持页面前台；若系统静音，请调高媒体音量。</p>`;for(let g=1;g<=5;g++){const qs=p.listening.filter(q=>q.group===g);body+=`<div class="card"><h3>${qs[0].kind} · 第${g}组</h3><button class="btn secondary mockSpeak" data-text="${qs[0].transcript.replace(/"/g,'&quot;')}">▶ 播放本组录音</button>${qs.map(q=>mockQuestion(q,`l${p.listening.indexOf(q)}`,p.listening.indexOf(q)+1)).join('')}</div>`}}if(mockStageIndex===2){const c=p.reading.cloze,m=p.reading.matching;body=`<h3>阅读理解（30题）</h3><h3>选词填空</h3><div class="practice-prompt"><b>短文与词库</b><p>${c.text}</p><p>${c.bank.map((w,i)=>`${String.fromCharCode(65+i)}. ${w}`).join('　')}</p></div>${c.answers.map((a,i)=>mockQuestion({q:`第 ${i+1} 空`,opts:c.bank,a,why:c.explanations[i]},`c${i}`,i+1,true)).join('')}<h3>长篇匹配</h3><div class="practice-prompt"><b>阅读材料</b><p>${m.paragraphs.join('<br><br>')}</p></div>${m.questions.map((q,i)=>mockQuestion({...q,opts:'ABCDEFGHIJ'.split('')},`m${i}`,i+11,true)).join('')}<h3>仔细阅读</h3>${p.reading.careful.map((q,i)=>`<div class="practice-prompt"><b>短文</b><p>${q.passage}</p>${mockQuestion(q,`r${i}`,i+21,true)}</div>`).join('')}`;}if(mockStageIndex===3)body=`<h3>翻译（1题）</h3><p class="practice-prompt">${p.translation.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="翻译答题区">${mockAnswers.translation||''}</textarea>`;const questionNav=(mockStageIndex===1||mockStageIndex===2)?'<div class="mock-actions"><button class="btn secondary" id="mockPrevQ">上一题</button><button class="btn secondary" id="mockNextQ">下一题</button></div>':'';box.innerHTML=`<div class="mock-banner"><div class="mock-timer" id="mockClock">${formatClock(mockRemaining)}</div><p>答案实时保存在本机</p></div><div class="mock-stage">${stages.map((s,i)=>`<span class="${i===mockStageIndex?'active':''}">${i+1} ${s}</span>`).join('')}</div><div class="card practice-card">${questionNav}${body}${questionNav}<div class="mock-actions"><button class="btn secondary" id="mockPrevStage" ${mockStageIndex===0?'disabled':''}>上一模块</button><button class="btn primary" id="mockNext">${mockStageIndex===3?'交卷':'下一模块'}</button></div><button class="btn secondary full" id="mockQuit">暂存退出</button></div>`;box.querySelectorAll('input[type=radio]').forEach(x=>x.onchange=()=>{mockAnswers[x.name]=Number(x.value);saveMockDraft()});const tx=document.getElementById('mockText');if(tx)tx.oninput=()=>{mockAnswers[mockStageIndex===0?'writing':'translation']=tx.value;saveMockDraft()};box.querySelectorAll('.mockSpeak').forEach(b=>b.onclick=()=>playMockSpeech(b.dataset.text,b));box.querySelectorAll('.mockCheck').forEach(b=>b.onclick=()=>{const selected=mockAnswers[b.dataset.key],answer=Number(b.dataset.answer),ex=box.querySelector(`[data-explain="${b.dataset.key}"]`);if(selected===undefined)return toast('请先选择答案');ex.innerHTML=`${selected===answer?'回答正确':'回答错误'} · 正确答案 ${String.fromCharCode(65+answer)}<br>${ex.innerHTML}`;ex.classList.add('show');b.disabled=true});const items=[...box.querySelectorAll('.mock-item')];const goQ=d=>{if(!items.length)return;mockFocus=Math.max(0,Math.min(items.length-1,mockFocus+d));items[mockFocus].scrollIntoView({behavior:'smooth',block:'start'});toast(`第 ${mockFocus+1} / ${items.length} 题`)};box.querySelectorAll('#mockPrevQ').forEach(b=>b.onclick=()=>goQ(-1));box.querySelectorAll('#mockNextQ').forEach(b=>b.onclick=()=>goQ(1));document.getElementById('mockPrevStage').onclick=()=>{if(mockStageIndex>0){mockStageIndex--;mockFocus=0;renderMock()}};document.getElementById('mockQuit').onclick=()=>{clearInterval(mockTimer);saveMockDraft();toast('本次模考已暂存');openMockSetup()};document.getElementById('mockNext').onclick=()=>{if(mockStageIndex<3){mockStageIndex++;mockFocus=0;renderMock()}else finishMock()};}
   let mockGeneratedAudio=null;
-  async function playMockSpeech(text,button){button.disabled=true;button.textContent='正在准备音频…';try{const res=await fetch('./api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});if(!res.ok)throw Error('云端音频生成失败');const blob=await res.blob();if(mockGeneratedAudio){mockGeneratedAudio.pause();URL.revokeObjectURL(mockGeneratedAudio.src)}mockGeneratedAudio=new Audio(URL.createObjectURL(blob));mockGeneratedAudio.onplay=()=>{button.textContent='■ 正在播放'};mockGeneratedAudio.onended=()=>{button.disabled=false;button.textContent='▶ 重新播放'};mockGeneratedAudio.onerror=()=>{button.disabled=false;button.textContent='▶ 重新播放';toast('音频播放失败，请检查媒体音量')};await mockGeneratedAudio.play()}catch(e){button.disabled=false;button.textContent='▶ 重新播放';if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.86;window.speechSynthesis.speak(u);toast('已切换为手机系统朗读')}else toast(e.message)}}
+  function splitSpeechText(text,max=700){const parts=[],sentences=String(text).match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[String(text)];let part='';sentences.forEach(s=>{if(part&&part.length+s.length>max){parts.push(part.trim());part=''};if(s.length>max){for(let i=0;i<s.length;i+=max)parts.push(s.slice(i,i+max).trim())}else part+=s});if(part.trim())parts.push(part.trim());return parts.filter(Boolean)}
+  async function playMockSpeech(text,button){button.disabled=true;button.textContent='正在准备音频…';try{const chunks=splitSpeechText(text);const urls=[];for(let i=0;i<chunks.length;i++){button.textContent=`正在生成 ${i+1}/${chunks.length}…`;const res=await fetch('./api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunks[i]})});if(!res.ok){const info=await res.json().catch(()=>({}));throw Error(info.error||`云端音频生成失败 (${res.status})`)}const blob=await res.blob();urls.push(URL.createObjectURL(blob))}let index=0;const playNext=async()=>{if(index>=urls.length){urls.forEach(URL.revokeObjectURL);button.disabled=false;button.textContent='▶ 重新播放';return}mockGeneratedAudio=new Audio(urls[index++]);mockGeneratedAudio.onplay=()=>{button.textContent=`■ 正在播放 ${index}/${urls.length}`};mockGeneratedAudio.onended=playNext;mockGeneratedAudio.onerror=()=>{button.disabled=false;button.textContent='▶ 重新播放';toast('音频播放失败，请检查媒体音量')};await mockGeneratedAudio.play()};if(mockGeneratedAudio)mockGeneratedAudio.pause();await playNext()}catch(e){button.disabled=false;button.textContent='▶ 重新播放';if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.86;window.speechSynthesis.speak(u);toast('云端暂不可用，已切换为手机系统朗读')}else toast(e.message)}}
   document.addEventListener('change',e=>{if(!e.target.matches('#mockRunner input[type="radio"]'))return;const card=e.target.closest('details.mock-item');if(card){const badge=card.querySelector('.source-badge');if(badge)badge.textContent='已作答';setTimeout(()=>card.open=false,260)}});
   document.addEventListener('click',e=>{if(!e.target.matches('#mockPrevQ,#mockNextQ'))return;setTimeout(()=>{const items=[...document.querySelectorAll('#mockRunner details.mock-item')];if(items[mockFocus])items[mockFocus].open=true},0)});
+  document.addEventListener('click',e=>{if(e.target.matches('#mockSetup button')&&e.target.textContent.trim()==='进入考场')pushSubpage('mock-runner')},true);
   function finishMock(){clearInterval(mockTimer);const p=mockPacks()[mockPackIndex],all=[...p.listening.map((q,i)=>({...q,key:`l${i}`,section:'听力'})),...p.reading.cloze.answers.map((a,i)=>({id:`${p.id}-c${i}`,q:`选词填空第 ${i+1} 空`,opts:p.reading.cloze.bank,a,why:p.reading.cloze.explanations[i],key:`c${i}`,section:'阅读'})),...p.reading.matching.questions.map((q,i)=>({...q,opts:'ABCDEFGHIJ'.split(''),key:`m${i}`,section:'阅读'})),...p.reading.careful.map((q,i)=>({...q,key:`r${i}`,section:'阅读'}))],wrong=all.filter(q=>mockAnswers[q.key]!==q.a),right=55-wrong.length,old=JSON.parse(localStorage.getItem('cetMockMistakes')||'[]').filter(x=>!x.id.startsWith(p.id));localStorage.setItem('cetMockMistakes',JSON.stringify([...old,...wrong.map(q=>({...q,level:levelKey(),mockId:p.id,selected:mockAnswers[q.key]??-1}))]));localStorage.removeItem(`cetMockDraft:${levelKey()}:${mockPackIndex}`);localStorage.setItem(`cetMockLast:${levelKey()}`,JSON.stringify({finishedAt:Date.now(),right,total:55}));document.getElementById('mockRunner').innerHTML=`<div class="mock-banner"><h3>交卷成功 · ${right}/55</h3><p>客观题已评分，${wrong.length} 道错题或未答题已加入错题本。</p></div><div class="card practice-card"><h3>写作参考结构</h3><p>${p.writing.reference}</p><h3>翻译参考</h3><p>${p.translation.reference}</p><h3>客观题解析（交卷后）</h3>${all.map((q,i)=>`<details><summary>${i+1}. ${mockAnswers[q.key]===q.a?'✓':'✗'} 正确答案 ${String.fromCharCode(65+q.a)}</summary><p>${q.why}</p></details>`).join('')}</div><button class="btn primary full" id="mockAgain">返回模考列表</button>`;document.getElementById('mockAgain').onclick=openMockSetup;renderMistakes();toast('成绩与错题已保存')}
   function openMockReview(){navigate('mockScreen');document.getElementById('mockSetup').hidden=true;const box=document.getElementById('mockRunner');box.hidden=false;box.innerHTML=`<div class="mock-banner"><h3>${state.level==='CET-6'?'六级':'四级'}模考错题复习</h3><p>共 ${mockMistakes().length} 道，重新查看正确答案与错因。</p></div>${mockMistakes().map(q=>`<div class="card mistake"><span class="tag">${q.section}</span><h3>${q.q}</h3><p>正确答案：${String.fromCharCode(65+q.a)}. ${q.opts[q.a]}</p><p>${q.why}</p></div>`).join('')}`}
-  document.getElementById('mockBack').onclick=()=>{clearInterval(mockTimer);navigate('studyScreen')};
+  document.getElementById('mockBack').onclick=()=>{clearInterval(mockTimer);appBack('studyScreen')};
 
   // ===== 四六级真题资源库 =====
   let examFilter='all', examViewMode='all', examFilterLevel='';
@@ -1027,6 +1042,7 @@
   }
   async function openPdf(path,title,subtitle){
     if(!path) return toast('此资料未提供');
+    if(!document.getElementById('resourceViewer').classList.contains('show'))pushSubpage('pdf-viewer');
     examState.__last={path,title,time:Date.now(),level:state.level}; saveExamState();
     document.getElementById('viewerTitle').textContent=title;
     document.getElementById('viewerSubtitle').textContent=subtitle;
@@ -1048,6 +1064,7 @@
   }
   function closeViewer(){ ++pdfOpenToken; if(pdfRenderTask) try{pdfRenderTask.cancel();}catch(_){ } if(pdfDocument) try{pdfDocument.destroy();}catch(_){ } pdfDocument=null; document.getElementById('resourceViewer').classList.remove('show'); document.body.style.overflow=''; }
   function playExamAudio(e){
+    if(!document.getElementById('audioDock').classList.contains('show'))pushSubpage('audio-player');
     const a=document.getElementById('examAudio'); a.src=e.audio; document.getElementById('audioTitle').textContent=e.title+' · 听力'; document.getElementById('audioMeta').textContent=`真题原音频 · ${fmtDuration(e.audioDuration)}`; document.getElementById('audioDock').classList.add('show'); a.play().catch(()=>{}); const k=examKey(e); examState[k]=Object.assign({},examState[k]||{},{lastOpened:Date.now()}); saveExamState();
   }
   function closeAudio(){ const a=document.getElementById('examAudio'); a.pause(); a.removeAttribute('src'); a.load(); document.getElementById('audioDock').classList.remove('show'); }
@@ -1062,17 +1079,17 @@
     }catch(err){ btn.textContent=old; btn.disabled=false; toast('缓存失败，请检查存储空间或网络'); }
   }
   document.getElementById('homeExamLibrary').onclick=()=>openExamLibrary('all');
-  document.getElementById('examBack').onclick=()=>navigate('studyScreen');
+  document.getElementById('examBack').onclick=()=>appBack('studyScreen');
   document.getElementById('examYear').onchange=renderExamLibrary;
   document.getElementById('examMonth').onchange=renderExamLibrary;
   document.querySelectorAll('[data-efilter]').forEach(b=>b.onclick=()=>{ examFilter=b.dataset.efilter; renderExamLibrary(); });
-  document.getElementById('viewerClose').onclick=closeViewer;
+  document.getElementById('viewerClose').onclick=()=>appBack();
   document.getElementById('pdfPrev').onclick=()=>{ if(pdfDocument&&pdfPageNumber>1){pdfPageNumber--;renderPdfPage();} };
   document.getElementById('pdfNext').onclick=()=>{ if(pdfDocument&&pdfPageNumber<pdfDocument.numPages){pdfPageNumber++;renderPdfPage();} };
   document.getElementById('pdfZoomOut').onclick=()=>{ if(pdfDocument){pdfZoom=Math.max(.6,pdfZoom-.2);renderPdfPage();} };
   document.getElementById('pdfZoomIn').onclick=()=>{ if(pdfDocument){pdfZoom=Math.min(2.4,pdfZoom+.2);renderPdfPage();} };
-  document.getElementById('audioClose').onclick=closeAudio;
-  window.addEventListener('popstate',()=>{ if(document.getElementById('resourceViewer').classList.contains('show')) closeViewer(); });
+  document.getElementById('audioClose').onclick=()=>appBack();
+  window.addEventListener('popstate',e=>{restoringHistory=true;closeViewer();closeAudio();modal.classList.remove('show');const route=e.state||{screen:'homeScreen'};if(route.screen==='mockScreen'&&!route.view)openMockSetup();else if(route.screen==='practiceScreen'&&!route.view)openPractice(practiceType);else navigate(route.screen||'homeScreen');restoringHistory=false});
   initExamFilters();
 
 
