@@ -1,0 +1,58 @@
+name: Build Android APK v20
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-android-v20.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Create Android project
+        run: |
+          mkdir -p android-v20/app/src/main/java/com/dan/cetstudy
+          mkdir -p android-v20/app/src/main/res/values android-v20/app/src/main/res/drawable
+          printf "%s\n" "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }" "rootProject.name='DanCETStudy'" "include ':app'" > android-v20/settings.gradle
+          printf "%s\n" "plugins { id 'com.android.application' version '8.5.2' apply false }" > android-v20/build.gradle
+          printf "%s\n" "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" > android-v20/gradle.properties
+          cat > android-v20/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'com.dan.cetstudy'
+            compileSdk 35
+            defaultConfig { applicationId 'com.dan.cetstudy'; minSdk 21; targetSdk 34; versionCode 20; versionName '2.0.0' }
+            signingConfigs { release { storeFile file(System.getProperty('user.home')+'/.android/dan.keystore'); storePassword 'danstudy2026'; keyAlias 'dancet'; keyPassword 'danstudy2026'; enableV1Signing true; enableV2Signing true } }
+            buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false; shrinkResources false } }
+          }
+          EOF
+          cat > android-v20/app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET"/><application android:icon="@drawable/icon" android:label="丹CET学习舱" android:theme="@style/AppTheme"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
+          EOF
+          printf '%s' '<resources><style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"><item name="android:colorAccent">#315CF4</item></style></resources>' > android-v20/app/src/main/res/values/styles.xml
+          printf '%s' '<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle"><solid android:color="#315CF4"/><corners android:radius="24dp"/></shape>' > android-v20/app/src/main/res/drawable/icon.xml
+          cat > android-v20/app/src/main/java/com/dan/cetstudy/MainActivity.java <<'EOF'
+          package com.dan.cetstudy;
+          import android.app.Activity; import android.os.Bundle; import android.webkit.WebChromeClient; import android.webkit.WebSettings; import android.webkit.WebView; import android.webkit.WebViewClient;
+          public class MainActivity extends Activity { private WebView web; public void onCreate(Bundle b){super.onCreate(b);web=new WebView(this);setContentView(web);WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setMediaPlaybackRequiresUserGesture(false);web.setWebChromeClient(new WebChromeClient());web.setWebViewClient(new WebViewClient());web.loadUrl("https://cet-study2-mobile.pages.dev/?source=android-v20");} public void onBackPressed(){if(web.canGoBack())web.goBack();else super.onBackPressed();} }
+          EOF
+      - name: Sign, build and verify
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -keystore "$HOME/.android/dan.keystore" -storepass danstudy2026 -alias dancet -keypass danstudy2026 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Dan CET Study, OU=Personal, O=Dan, L=Beijing, ST=Beijing, C=CN"
+          cd android-v20
+          gradle :app:assembleRelease --no-daemon
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dan-CET-Study-Android-v20
+          path: android-v20/app/build/outputs/apk/release/app-release.apk
