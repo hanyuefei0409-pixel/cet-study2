@@ -1,15 +1,42 @@
+const ALLOWED_ORIGINS = new Set([
+  "https://cet-study2-mobile.pages.dev",
+  "https://hanyuefei0409-pixel.github.io"
+]);
+
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin") || "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://cet-study2-mobile.pages.dev",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+    "Vary": "Origin"
+  };
+}
+
 export default {
-  async fetch(request,env){
-    const cors={"Access-Control-Allow-Origin":env.APP_ORIGIN||"*","Access-Control-Allow-Headers":"Content-Type","Access-Control-Allow-Methods":"POST,OPTIONS"};
-    if(request.method==="OPTIONS")return new Response(null,{headers:cors});
-    if(request.method!=="POST")return Response.json({error:"Method not allowed"},{status:405,headers:cors});
-    try{
-      const {message,level}=await request.json();
-      if(!message||String(message).length>3000)return Response.json({error:"问题为空或过长"},{status:400,headers:cors});
-      const base=(env.API_BASE||"https://api.openai.com/v1").replace(/\/$/,"");
-      const upstream=await fetch(`${base}/chat/completions`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${env.API_KEY}`},body:JSON.stringify({model:env.MODEL||"gpt-5.4-mini",messages:[{role:"system",content:`你是大学英语${level==="CET-6"?"六级":"四级"}学习助手。用中文简洁讲解，引用原文证据，不编造答案。`},{role:"user",content:String(message)}]})});
-      const data=await upstream.json(); if(!upstream.ok)throw new Error(data?.error?.message||`上游错误 ${upstream.status}`);
-      return Response.json({answer:data.choices?.[0]?.message?.content||"暂时没有生成回答"},{headers:cors});
-    }catch(error){return Response.json({error:error.message||"服务异常"},{status:500,headers:cors})}
+  async fetch(request, env) {
+    const cors = corsHeaders(request);
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (request.method !== "POST") return Response.json({ error: "仅支持学习助手请求" }, { status: 405, headers: cors });
+    const origin = request.headers.get("Origin");
+    if (origin && !ALLOWED_ORIGINS.has(origin)) return Response.json({ error: "来源未授权" }, { status: 403, headers: cors });
+    try {
+      const body = await request.json();
+      const message = String(body.message || "").trim();
+      const level = body.level === "CET-6" ? "六级" : "四级";
+      if (!message || message.length > 1800) return Response.json({ error: "问题为空或内容过长" }, { status: 400, headers: cors });
+      const result = await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+        messages: [
+          { role: "system", content: `你是大学英语${level}私人学习助手。用简体中文回答，英语例句保留英文。优先讲清词汇、语法、阅读证据、听力方法、翻译和写作修改。回答简洁、分点明确；不确定时明确说明，不编造真题答案。` },
+          { role: "user", content: message }
+        ],
+        max_tokens: 500,
+        temperature: 0.35
+      });
+      const answer = result?.response || result?.result?.response || "暂时没有生成回答";
+      return Response.json({ answer }, { headers: { ...cors, "Cache-Control": "no-store" } });
+    } catch (error) {
+      return Response.json({ error: error?.message || "AI服务暂时不可用" }, { status: 500, headers: cors });
+    }
   }
 };

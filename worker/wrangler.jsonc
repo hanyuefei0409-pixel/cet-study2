@@ -1,0 +1,9 @@
+{
+  "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
+  "name": "cet-study-ai-live",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-02",
+  "ai": {
+    "binding": "AI"
+  }
+}
