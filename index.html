@@ -511,7 +511,7 @@
     <section class="screen" id="mistakeScreen">
       <div class="page-title"><h2>智能错题本</h2><p>系统会按错因安排复习，而不是只收藏</p></div>
       <div class="tabs">
-        <button class="pill active">全部</button><button class="pill">听力</button><button class="pill">阅读</button><button class="pill">写作</button><button class="pill">翻译</button>
+        <button class="pill active" data-mistake-filter="all">全部</button><button class="pill" data-mistake-filter="听力">听力</button><button class="pill" data-mistake-filter="阅读">阅读</button><button class="pill" data-mistake-filter="写作">写作</button><button class="pill" data-mistake-filter="翻译">翻译</button>
       </div>
       <div id="mistakeList"></div>
       <button class="btn primary full" id="reviewMistakes">开始今日错题复习</button>
@@ -602,16 +602,23 @@
 <script src="data/practice-data.js"></script>
   <script src="data/full-mock-data.js"></script>
   <script src="data/licensed-cet4-mocks.js"></script>
+  <script src="data/licensed-cet6-mocks.js"></script>
 <script src="config.js"></script>
 <script>
   const defaults = {
     level: 'CET-4', target: 500, daily: 60, score: 472,
     examDate: (()=>{ const d=new Date(); d.setDate(d.getDate()+126); return d.toISOString().slice(0,10); })(),
-    tasks: [false,false,false,false,false], streak: 7, weekMinutes: 214,
+    tasks: [false,false,false,false,false], taskDate: '', streak: 7, weekMinutes: 214,
     wordIndex4: 0, wordIndex6: 0,
     vocabStatus: {'CET-4':{}, 'CET-6':{}}
   };
   const state = Object.assign({}, defaults, JSON.parse(localStorage.getItem('cetWorkbenchState') || '{}'));
+  function localDayKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+  function resetDailyTasksIfNeeded(){const today=localDayKey();if(state.taskDate!==today){state.tasks=defaults.tasks.slice();state.taskDate=today;save();return true}return false}
+  resetDailyTasksIfNeeded();
+  function scheduleMidnightReset(){const now=new Date(),next=new Date(now);next.setHours(24,0,0,0);setTimeout(()=>{resetDailyTasksIfNeeded();renderTasks();renderHero();scheduleMidnightReset()},Math.max(1000,next-now+500))}
+  scheduleMidnightReset();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&resetDailyTasksIfNeeded()){renderTasks();renderHero();toast('新一天的今日计划已自动重置')}});
   if(!state.vocabStatus || typeof state.vocabStatus!=='object') state.vocabStatus={'CET-4':{},'CET-6':{}};
   if(!state.vocabStatus['CET-4']) state.vocabStatus['CET-4']={};
   if(!state.vocabStatus['CET-6']) state.vocabStatus['CET-6']={};
@@ -651,7 +658,8 @@
     const data=isCET4?window.CET4_EXAMS:window.CET6_EXAMS, label=isCET4?'四级':'六级', p=window.CET_PRACTICE?.[isCET4?'cet4':'cet6'];
     if(homeCard){ homeCard.style.display='flex'; homeCard.disabled=false; }
     const notice=document.getElementById('levelExamNotice'); if(notice) notice.classList.remove('show');
-    const meta={listening:`${data?.stats.audios||0}段${label}真题音频`,reading:`${quizList().length}道原创阅读题`,writing:`${practiceData('writing').length}个写作主题`,translation:`${practiceData('translation').length}篇翻译训练`,mock:'8套 · 每套57项'};
+    const licensedCount=(isCET4?window.CET_LICENSED_MOCKS:window.CET_LICENSED_CET6_MOCKS)?.length||0;
+    const meta={listening:`${data?.stats.audios||0}段${label}真题音频`,reading:`${quizList().length}道原创阅读题`,writing:`${practiceData('writing').length}个写作主题`,translation:`${practiceData('translation').length}篇翻译训练`,mock:`8套结构化 · ${licensedCount}套授权原卷`};
     ['listening','reading','writing','translation','mock'].forEach(k=>{
       const btn=document.getElementById(k+'Module'), small=document.getElementById(k+'ModuleMeta');
       if(btn){ btn.classList.remove('module-disabled'); btn.setAttribute('aria-disabled','false'); }
@@ -704,7 +712,7 @@
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
   document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
-  document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
+  document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); state.taskDate=localDayKey(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
     const list=levelWords(), p=indexProp(); if(!list.length) return;
     state[p]=(currentIndex()+1)%list.length; save(); renderWord(); renderVocabScreen();
@@ -739,13 +747,17 @@
   };
   document.getElementById('nextQuiz').onclick=()=>{ quizIndex=(quizIndex+1)%quizList().length; renderQuiz(); };
   function mockMistakes(){return JSON.parse(localStorage.getItem('cetMockMistakes')||'[]').filter(x=>x.level===levelKey())}
+  let mistakeFilter='all';
   function renderMistakes(){
     const box=document.getElementById('mistakeList'), byId=Object.fromEntries(quizList().map(q=>[q.id,q])); box.innerHTML='';
-    const rows=quizMistakes.map(id=>byId[id]).filter(Boolean), mockRows=mockMistakes();
-    if(!rows.length&&!mockRows.length){ box.innerHTML='<div class="card mistake"><span class="tag">暂无错题</span><h3>阅读小测和完整模考中的错题都会自动加入这里。</h3></div>'; return; }
-    rows.forEach(q=>{ const d=document.createElement('div'); d.className='card mistake'; d.innerHTML=`<span class="tag">阅读 · ${q.title}</span><h3>${q.q}</h3><p>${q.why}</p>`; box.appendChild(d); });
-    mockRows.forEach(q=>{const d=document.createElement('div');d.className='card mistake';d.innerHTML=`<span class="tag">模考 · ${q.section}</span><h3>${q.q}</h3><p>你的答案：${q.selected<0?'未作答':String.fromCharCode(65+q.selected)} · 正确答案：${String.fromCharCode(65+q.a)}</p><p>${q.why}</p>`;box.appendChild(d)});
+    const rows=quizMistakes.map(id=>byId[id]).filter(Boolean).map(q=>({...q,section:'阅读',source:'阅读小测'}));
+    const mockRows=mockMistakes().map(q=>({...q,source:'全真模考'}));
+    const all=[...rows,...mockRows],shown=mistakeFilter==='all'?all:all.filter(q=>q.section===mistakeFilter);
+    document.querySelectorAll('[data-mistake-filter]').forEach(b=>{const key=b.dataset.mistakeFilter,count=key==='all'?all.length:all.filter(q=>q.section===key).length;b.classList.toggle('active',key===mistakeFilter);b.textContent=`${key==='all'?'全部':key} ${count}`});
+    if(!shown.length){box.innerHTML=`<div class="card mistake"><span class="tag">${mistakeFilter==='all'?'暂无错题':`暂无${mistakeFilter}错题`}</span><h3>完成阅读小测或全真模考后，错题会按当前级别自动归类到这里。</h3></div>`;return}
+    shown.forEach(q=>{const d=document.createElement('div');d.className='card mistake';const answer=q.selected===undefined?'':`<p>你的答案：${q.selected<0?'未作答':String.fromCharCode(65+q.selected)} · 正确答案：${String.fromCharCode(65+q.a)}</p>`;d.innerHTML=`<span class="tag">${q.source} · ${q.section}</span><h3>${q.q}</h3>${answer}<p>${q.why}</p>`;box.appendChild(d)});
   }
+  document.querySelectorAll('[data-mistake-filter]').forEach(b=>b.onclick=()=>{mistakeFilter=b.dataset.mistakeFilter;renderMistakes()});
   document.getElementById('reviewMistakes').onclick=()=>{ const list=quizList(); const first=list.findIndex(q=>quizMistakes.includes(q.id));if(first>=0){quizIndex=first;navigate('studyScreen');renderQuiz();document.querySelector('.quiz-card').scrollIntoView({behavior:'smooth',block:'start'});toast('已进入阅读错题重做')}else if(mockMistakes().length){openMockReview()}else toast('暂无错题，先完成一次练习或模考'); };
 
   const modal=document.getElementById('settingsModal');
@@ -910,7 +922,7 @@
   function mockPacks(){return window.CET_FULL_MOCKS?.[levelKey()]||[]}
   function openMockSetup(){navigate('mockScreen');clearInterval(mockTimer);const packs=mockPacks(),box=document.getElementById('mockSetup');document.getElementById('mockRunner').hidden=true;document.getElementById('mockTitle').textContent=`${state.level==='CET-6'?'六级':'四级'}考场模拟`;box.hidden=false;box.innerHTML='<div class="mock-banner"><h3>完整结构 · 57项 · 125分钟</h3><p>写作1篇、听力25题、阅读30题、翻译1段。所有模拟内容均按官方结构原创，答案与解析交卷后统一显示。</p></div><div class="practice-list"></div>';const list=box.querySelector('.practice-list');packs.forEach((p,i)=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<h3>${p.title}</h3><p>${p.theme} · 55道客观题</p><button class="btn primary full">进入考场</button>`;c.querySelector('button').onclick=()=>startMock(i);list.appendChild(c)});}
   const openMockSetupBase=openMockSetup;
-  openMockSetup=function(){openMockSetupBase();if(levelKey()!=='cet4'||!window.CET_LICENSED_MOCKS?.length)return;const box=document.getElementById('mockSetup'),section=document.createElement('section');section.innerHTML='<div class="section-head" style="margin-top:18px"><div><small>你提供的资料</small><h2>授权原卷资料</h2></div></div><div class="practice-list licensed-mock-list"></div>';const list=section.querySelector('.licensed-mock-list');window.CET_LICENSED_MOCKS.forEach((x,i)=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<span class="source-badge">四级专属</span><h3>${x.title}</h3><p>${x.writingTitle}</p><div class="mock-actions"><button class="btn primary" data-paper>站内查看原卷</button><button class="btn secondary" data-answer>查看解析</button></div>`;c.querySelector('[data-paper]').onclick=()=>openPdf(x.paper,x.title,'试卷');c.querySelector('[data-answer]').onclick=()=>openPdf(x.answer,`${x.title}解析`,'答案与解析');list.appendChild(c)});box.appendChild(section)};
+  openMockSetup=function(){openMockSetupBase();const isCET4=levelKey()==='cet4',licensed=isCET4?window.CET_LICENSED_MOCKS:window.CET_LICENSED_CET6_MOCKS;if(!licensed?.length)return;const label=isCET4?'四级':'六级',box=document.getElementById('mockSetup'),section=document.createElement('section');section.innerHTML=`<div class="section-head" style="margin-top:18px"><div><small>你提供的资料</small><h2>${label}授权原卷资料</h2></div></div><div class="practice-list licensed-mock-list"></div>`;const list=section.querySelector('.licensed-mock-list');licensed.forEach(x=>{const c=document.createElement('article');c.className='card practice-card';c.innerHTML=`<span class="source-badge">${label}专属</span><h3>${x.title}</h3><p>${x.writingTitle||x.description||`${label}模拟试卷与解析`}</p><div class="mock-actions"><button class="btn primary" data-paper>站内查看原卷</button><button class="btn secondary" data-answer>查看解析</button></div>`;c.querySelector('[data-paper]').onclick=()=>openPdf(x.paper,x.title,'试卷');c.querySelector('[data-answer]').onclick=()=>openPdf(x.answer,`${x.title}解析`,'答案与解析');list.appendChild(c)});box.appendChild(section)};
   function startMock(packIndex){mockPackIndex=packIndex;mockStageIndex=0;mockRemaining=125*60;mockAnswers=JSON.parse(localStorage.getItem(`cetMockDraft:${levelKey()}:${packIndex}`)||'{}');document.getElementById('mockSetup').hidden=true;document.getElementById('mockRunner').hidden=false;renderMock();clearInterval(mockTimer);mockTimer=setInterval(()=>{mockRemaining=Math.max(0,mockRemaining-1);const t=document.getElementById('mockClock');if(t)t.textContent=formatClock(mockRemaining);if(!mockRemaining){clearInterval(mockTimer);finishMock()}},1000)}
   function formatClock(s){return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
   function mockQuestion(q,key,n){return `<details class="practice-prompt mock-item" data-key="${key}" open><summary><b>${n}. ${q.q}</b> <span class="source-badge">${mockAnswers[key]===undefined?'未作答':'已作答'}</span></summary>${q.opts.map((o,i)=>`<label class="option"><input type="radio" name="${key}" value="${i}" ${mockAnswers[key]===i?'checked':''}> ${String.fromCharCode(65+i)}. ${o}</label>`).join('')}</details>`}
