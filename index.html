@@ -157,6 +157,13 @@
     .option { display:block; width:100%; text-align:left; padding:14px; margin:10px 0; border-radius:15px; background:#f4f6fa; color:#384258; border:1px solid transparent; }
     .option.selected { border-color:var(--primary); background:#eef3ff; }
     .option.correct { border-color:var(--green); background:#ecfbf4; }
+    .option.wrong { border-color:var(--red); background:#fff0f2; }
+    .quiz-passage { color:#4b556c; line-height:1.75; padding:14px; border-radius:15px; background:#f7f9fd; margin-bottom:14px; }
+    .quiz-progress { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-bottom:10px; }
+    .quiz-explain { display:none; padding:13px 14px; margin:12px 0; border-radius:14px; line-height:1.65; background:#eef3ff; color:#405071; }
+    .quiz-explain.show { display:block; }
+    .quiz-next { display:none; margin-top:10px; }
+    .quiz-next.show { display:block; }
 
     .report-card { padding:18px; }
     .metric { margin:14px 0; }
@@ -390,12 +397,13 @@
 
       <div class="section-head"><h2>阅读小测</h2><span class="link">预计 3 分钟</span></div>
       <div class="card quiz-card">
-        <h3>“The proposal was rejected primarily because it lacked practical details.” 句中 primarily 最接近：</h3>
-        <button class="option" data-answer="a">A. 最初地</button>
-        <button class="option" data-answer="b">B. 主要地</button>
-        <button class="option" data-answer="c">C. 公开地</button>
-        <button class="option" data-answer="d">D. 偶然地</button>
+        <div class="quiz-progress"><span id="quizTitle">阅读训练</span><span id="quizPosition">1 / 12</span></div>
+        <div class="quiz-passage" id="quizPassage"></div>
+        <h3 id="quizQuestion"></h3>
+        <div id="quizOptions"></div>
+        <div class="quiz-explain" id="quizExplain"></div>
         <button class="btn primary full" id="checkAnswer">提交答案</button>
+        <button class="btn secondary full quiz-next" id="nextQuiz">下一题 / 下一篇 →</button>
       </div>
     </section>
 
@@ -453,11 +461,11 @@
     <section class="screen" id="cet4ExamScreen">
       <div class="page-title vocab-page-head">
         <button class="back-btn" id="examBack" aria-label="返回">‹</button>
-        <div><h2>四级真题资源库</h2><p>按年份、月份和套数整理，可直接播放听力并查看整卷与解析</p></div>
+        <div><h2 id="examPageTitle">四级真题资源库</h2><p id="examPageSubtitle">按年份、月份和套数整理，可直接播放听力并查看整卷与解析</p></div>
       </div>
       <div class="card exam-hero">
-        <h3>2020—2025 四级真题</h3>
-        <p>资源全部来自你上传的压缩包。未提供独立听力或解析的套卷，会在卡片上如实标注。</p>
+        <h3 id="examHeroTitle">2020—2025 四级真题</h3>
+        <p id="examHeroDesc">资源全部来自你上传的压缩包。未提供独立听力或解析的套卷，会在卡片上如实标注。</p>
         <div class="exam-stats">
           <div class="exam-stat"><b id="examSetCount">40</b><span>真题套卷</span></div>
           <div class="exam-stat"><b id="examAudioCount">25</b><span>听力音频</span></div>
@@ -484,9 +492,7 @@
       <div class="tabs">
         <button class="pill active">全部</button><button class="pill">听力</button><button class="pill">阅读</button><button class="pill">写作</button><button class="pill">翻译</button>
       </div>
-      <div class="card mistake"><span class="tag">听力 · 转折信息遗漏</span><h3>The speaker changes her opinion after “however”.</h3><p>复习建议：重听转折词后的 8 秒 · 明天再做一次</p></div>
-      <div class="card mistake"><span class="tag">阅读 · 定位错误</span><h3>你选择了与原文主题相似、但缺少依据的干扰项。</h3><p>复习建议：重新标出题干关键词和原文定位句</p></div>
-      <div class="card mistake"><span class="tag">翻译 · 主干结构</span><h3>“随着城市的发展……”不宜逐词直译。</h3><p>复习建议：先确定主语，再选择 with / as 结构</p></div>
+      <div id="mistakeList"></div>
       <button class="btn primary full" id="reviewMistakes">开始今日错题复习</button>
     </section>
 
@@ -517,7 +523,7 @@
     </section>
 
     <section class="screen" id="aiScreen">
-      <div class="page-title"><h2>AI学习助手</h2><p>当前为离线演示版，可根据内置规则给出学习建议</p></div>
+      <div class="page-title"><h2>AI学习助手</h2><p id="aiStatusText">由管理员在后台配置，使用者无需填写或保存 API Key</p></div>
       <div class="chat" id="chatBox">
         <div class="bubble ai">你好，我是你的CET学习助手。根据目前数据，今天最优先的是听力精听，其次是限时阅读。</div>
         <div class="quick"><button>分析我的薄弱点</button><button>生成今日计划</button><button>讲解长难句</button></div>
@@ -540,7 +546,7 @@
   <div class="viewer-head">
     <button id="viewerClose" aria-label="关闭">‹</button>
     <div><b id="viewerTitle">查看资料</b><small id="viewerSubtitle">PDF</small></div>
-    <a id="viewerOpen" href="#" target="_blank" rel="noopener">新窗口</a>
+    <span style="width:42px"></span>
   </div>
   <iframe class="viewer-frame" id="viewerFrame" title="PDF资料"></iframe>
 </div>
@@ -563,6 +569,9 @@
 
 <script src="vocab-data.js"></script>
 <script src="exam-data.js"></script>
+<script src="data/questions.js"></script>
+<script src="data/extra_questions.js"></script>
+<script src="config.js"></script>
 <script>
   const defaults = {
     level: 'CET-4', target: 500, daily: 60, score: 472,
@@ -655,7 +664,7 @@
     window.scrollTo({top:0,behavior:'smooth'});
   }
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
-  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ if(b.dataset.module==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(['listening','reading','writing','translation','mock'].includes(b.dataset.module)){ openExamLibrary(b.dataset.module); } else toast(`${b.querySelector('b').textContent}模块为演示内容`); });
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ if(b.dataset.module==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(b.dataset.module==='reading'){ navigate('studyScreen'); renderQuiz(); document.querySelector('.quiz-card').scrollIntoView({behavior:'smooth',block:'start'}); } else if(['listening','writing','translation','mock'].includes(b.dataset.module)){ openExamLibrary(b.dataset.module); } else toast(`${b.querySelector('b').textContent}模块为演示内容`); });
 
   document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
@@ -666,15 +675,38 @@
   document.getElementById('dontKnow').onclick=()=>{ setWordStatus({learning:'review'}); nextWord(); toast('已加入复习队列'); };
   document.getElementById('knowWord').onclick=()=>{ setWordStatus({learning:'mastered'}); nextWord(); toast('掌握度已更新'); };
 
-  let selected='';
-  document.querySelectorAll('.option').forEach(o=>o.onclick=()=>{ selected=o.dataset.answer; document.querySelectorAll('.option').forEach(x=>x.classList.remove('selected')); o.classList.add('selected'); });
+  let quizIndex=0, quizSelected=null, quizSubmitted=false;
+  const quizMistakes=JSON.parse(localStorage.getItem('cetQuizMistakes')||'[]');
+  function quizList(){ return (window.CET_QUESTIONS && window.CET_QUESTIONS[state.level==='CET-6'?'cet6':'cet4']) || []; }
+  function saveQuizMistakes(){ localStorage.setItem('cetQuizMistakes',JSON.stringify(quizMistakes)); }
+  function renderQuiz(){
+    const list=quizList(); if(!list.length) return;
+    quizIndex=(quizIndex+list.length)%list.length; const q=list[quizIndex];
+    document.getElementById('quizTitle').textContent=q.title;
+    document.getElementById('quizPosition').textContent=`${quizIndex+1} / ${list.length}`;
+    document.getElementById('quizPassage').textContent=q.passage;
+    document.getElementById('quizQuestion').textContent=q.q;
+    const box=document.getElementById('quizOptions'); box.innerHTML='';
+    q.opts.forEach((text,i)=>{ const b=document.createElement('button'); b.className='option'; b.textContent=`${String.fromCharCode(65+i)}. ${text}`; b.onclick=()=>{ if(quizSubmitted)return; quizSelected=i; box.querySelectorAll('.option').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); }; box.appendChild(b); });
+    document.getElementById('quizExplain').className='quiz-explain';
+    document.getElementById('nextQuiz').className='btn secondary full quiz-next';
+    document.getElementById('checkAnswer').disabled=false; quizSelected=null; quizSubmitted=false;
+  }
   document.getElementById('checkAnswer').onclick=()=>{
-    if(!selected) return toast('请先选择答案');
-    document.querySelectorAll('.option').forEach(o=>o.classList.remove('correct'));
-    document.querySelector('.option[data-answer="b"]').classList.add('correct');
-    toast(selected==='b'?'回答正确':'正确答案是 B');
+    if(quizSelected===null) return toast('请先选择答案');
+    const q=quizList()[quizIndex], opts=[...document.querySelectorAll('#quizOptions .option')]; quizSubmitted=true;
+    opts[q.a].classList.add('correct'); if(quizSelected!==q.a){ opts[quizSelected].classList.add('wrong'); if(!quizMistakes.includes(q.id)){quizMistakes.push(q.id);saveQuizMistakes();} }
+    const explain=document.getElementById('quizExplain'); explain.textContent=(quizSelected===q.a?'回答正确。':'回答错误。')+q.why; explain.classList.add('show');
+    document.getElementById('nextQuiz').classList.add('show'); document.getElementById('checkAnswer').disabled=true; renderMistakes();
   };
-  document.getElementById('reviewMistakes').onclick=()=>toast('已生成8题复习包');
+  document.getElementById('nextQuiz').onclick=()=>{ quizIndex=(quizIndex+1)%quizList().length; renderQuiz(); };
+  function renderMistakes(){
+    const box=document.getElementById('mistakeList'), byId=Object.fromEntries(quizList().map(q=>[q.id,q])); box.innerHTML='';
+    const rows=quizMistakes.map(id=>byId[id]).filter(Boolean);
+    if(!rows.length){ box.innerHTML='<div class="card mistake"><span class="tag">暂无错题</span><h3>完成阅读小测后，答错的题会自动加入这里。</h3></div>'; return; }
+    rows.forEach(q=>{ const d=document.createElement('div'); d.className='card mistake'; d.innerHTML=`<span class="tag">阅读 · ${q.title}</span><h3>${q.q}</h3><p>${q.why}</p>`; box.appendChild(d); });
+  }
+  document.getElementById('reviewMistakes').onclick=()=>{ const list=quizList(); const first=list.findIndex(q=>quizMistakes.includes(q.id)); quizIndex=first<0?0:first; navigate('studyScreen'); renderQuiz(); document.querySelector('.quiz-card').scrollIntoView({behavior:'smooth',block:'start'}); toast(first<0?'暂无错题，先做一道阅读小测':'已进入错题重做'); };
 
   const modal=document.getElementById('settingsModal');
   function syncSettings(){
@@ -782,12 +814,18 @@
     if(s.includes('425')||s.includes('过')) return '不要只盯着总分。优先保证阅读稳定、听力不崩，再通过写作与翻译减少低级错误，通常比盲目刷题更有效。';
     return '我已经记录你的问题。当前演示版使用离线规则回答；接入真实AI和题库后，可以根据你的错题、模考和学习时长给出个性化建议。';
   }
-  function sendChat(text){
+  async function sendChat(text){
     const q=(text||document.getElementById('chatInput').value).trim(); if(!q) return;
     const box=document.getElementById('chatBox');
     const me=document.createElement('div'); me.className='bubble me'; me.textContent=q; box.appendChild(me);
     document.getElementById('chatInput').value='';
-    setTimeout(()=>{ const ai=document.createElement('div'); ai.className='bubble ai'; ai.textContent=aiReply(q); box.appendChild(ai); ai.scrollIntoView({behavior:'smooth',block:'end'}); },350);
+    const ai=document.createElement('div'); ai.className='bubble ai'; ai.textContent='正在思考…'; box.appendChild(ai);
+    if(!(window.CET_CONFIG?.aiEnabled && window.CET_CONFIG?.aiEndpoint)){ ai.textContent=aiReply(q); ai.scrollIntoView({behavior:'smooth',block:'end'}); return; }
+    try{
+      const response=await fetch(window.CET_CONFIG.aiEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,level:state.level})});
+      const data=await response.json(); if(!response.ok) throw new Error(data.error||`请求失败 ${response.status}`); ai.textContent=data.answer||'暂时没有生成回答';
+    }catch(error){ ai.textContent='AI 暂时无法连接：'+error.message; }
+    ai.scrollIntoView({behavior:'smooth',block:'end'});
   }
   document.getElementById('sendChat').onclick=()=>sendChat();
   document.getElementById('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
@@ -796,7 +834,7 @@
 
 
   // ===== 四级真题资源库 =====
-  let examFilter='all';
+  let examFilter='all', examViewMode='all';
   const examState = JSON.parse(localStorage.getItem('cet4ExamProgress') || '{}');
   function saveExamState(){ localStorage.setItem('cet4ExamProgress',JSON.stringify(examState)); }
   function fmtBytes(n){ if(!n) return '—'; const u=['B','KB','MB','GB']; let i=0,v=n; while(v>=1024&&i<u.length-1){v/=1024;i++;} return `${v>=10||i===0?v.toFixed(0):v.toFixed(1)} ${u[i]}`; }
@@ -820,8 +858,17 @@
       toast('当前为六级模式：这批四级真题不会出现在六级中');
       return;
     }
-    examFilter = mode==='listening' ? 'audio' : 'all';
-    navigate('cet4ExamScreen'); renderExamLibrary();
+    examViewMode=mode; examFilter = mode==='listening' ? 'audio' : 'all';
+    navigate('cet4ExamScreen');
+    const listeningOnly=mode==='listening';
+    document.getElementById('examPageTitle').textContent=listeningOnly?'四级听力专项':'四级真题资源库';
+    document.getElementById('examPageSubtitle').textContent=listeningOnly?'只显示有录音的真题，点击即可在站内播放':'按年份、月份和套数整理，可直接播放听力并查看整卷与解析';
+    document.getElementById('examHeroTitle').textContent=listeningOnly?'2020—2025 四级听力':'2020—2025 四级真题';
+    document.getElementById('examHeroDesc').textContent=listeningOnly?'当前页面仅保留25段真题听力及播放入口。':'资源全部来自你上传的资料，缺失的音频或解析会如实标注。';
+    document.getElementById('examFilters').style.display=listeningOnly?'none':'flex';
+    document.querySelectorAll('.exam-stat').forEach((el,i)=>el.style.display=listeningOnly&&i!==1?'none':'block');
+    document.querySelector('.resource-note').style.display=listeningOnly?'none':'block';
+    renderExamLibrary();
   }
   window.openExamLibrary=openExamLibrary;
   function initExamFilters(){
@@ -852,14 +899,15 @@
       if(e.thumb){ const img=document.createElement('img'); img.className='exam-thumb'; img.src=e.thumb; img.loading='lazy'; img.alt=e.title+'试卷首页'; main.appendChild(img); }
       else { const fb=document.createElement('div'); fb.className='exam-thumb-fallback'; fb.textContent='📄'; main.appendChild(fb); }
       const info=document.createElement('div'); info.className='exam-info';
-      info.innerHTML=`<div class="exam-title-line"><h3>${e.title}</h3>${st.done?'<span class="exam-done">已完成</span>':''}</div>
+      info.innerHTML=examViewMode==='listening'?`<div class="exam-title-line"><h3>${e.title} · 听力</h3>${st.done?'<span class="exam-done">已完成</span>':''}</div><div class="exam-chips"><span class="exam-chip">真题原音频</span></div><div class="exam-meta">音频大小 ${fmtBytes(e.audioSize)} · 点击下方按钮直接播放</div>`:`<div class="exam-title-line"><h3>${e.title}</h3>${st.done?'<span class="exam-done">已完成</span>':''}</div>
         <div class="exam-chips"><span class="exam-chip">真题整卷</span><span class="exam-chip ${e.audio?'':'missing'}">${e.audio?'听力音频':'无独立音频'}</span><span class="exam-chip ${e.answer?'':'missing'}">${e.answer?'答案解析':'未提供解析'}</span></div>
         <div class="exam-meta">${e.audio?`听力 ${fmtDuration(e.audioDuration)} · ${fmtBytes(e.audioSize)}`:'压缩包中未提供本套独立音频'}<br>试卷 ${fmtBytes(e.paperSize)}${e.answer?` · 解析 ${fmtBytes(e.answerSize)}`:''}</div>`;
       main.appendChild(info); card.appendChild(main);
       const actions=document.createElement('div'); actions.className='exam-actions';
-      const paper=createResourceButton('查看真题','paper',e.paper,e.title,'四级真题整卷',!e.paper); actions.appendChild(paper);
+      const paper=createResourceButton('查看真题','paper',e.paper,e.title,'四级真题整卷',!e.paper); if(examViewMode!=='listening')actions.appendChild(paper);
       const audio=document.createElement('button'); audio.className='exam-action audio'; audio.textContent=e.audio?'播放听力':'无音频'; audio.disabled=!e.audio; if(e.audio) audio.onclick=()=>playExamAudio(e); actions.appendChild(audio);
-      const answer=createResourceButton('答案解析','answer',e.answer,e.title+' · 答案解析','答案与详细解析',!e.answer); actions.appendChild(answer);
+      const answer=createResourceButton('答案解析','answer',e.answer,e.title+' · 答案解析','答案与详细解析',!e.answer); if(examViewMode!=='listening')actions.appendChild(answer);
+      if(examViewMode==='listening') actions.style.gridTemplateColumns='1fr';
       card.appendChild(actions);
       const more=document.createElement('div'); more.className='exam-more';
       const done=document.createElement('button'); done.textContent=st.done?'✓ 取消完成':'标记已完成'; done.onclick=()=>{ examState[e.id]=Object.assign({},examState[e.id]||{},{done:!st.done,lastOpened:Date.now()}); saveExamState(); renderExamLibrary(); toast(examState[e.id].done?'已计入学习进度':'已取消完成'); }; more.appendChild(done);
@@ -874,7 +922,6 @@
     document.getElementById('viewerTitle').textContent=title;
     document.getElementById('viewerSubtitle').textContent=subtitle;
     document.getElementById('viewerFrame').src=path+'#toolbar=1&navpanes=0';
-    document.getElementById('viewerOpen').href=path;
     document.getElementById('resourceViewer').classList.add('show');
     document.body.style.overflow='hidden';
   }
@@ -904,7 +951,7 @@
   initExamFilters();
 
 
-  renderHeader(); renderHero(); renderTasks(); renderWord(); renderVocabScreen(); renderLevelContent();
+  renderHeader(); renderHero(); renderTasks(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>

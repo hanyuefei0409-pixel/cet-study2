@@ -1,6 +1,6 @@
-const SHELL='cet-study-shell-v4';
-const RUNTIME='cet-study-runtime-v4';
-const ASSETS=['./','./index.html','./manifest.json','./icon.svg','./vocab-data.js','./exam-data.js'];
+const SHELL='cet-study-shell-v5';
+const RUNTIME='cet-study-runtime-v5';
+const ASSETS=['./','./index.html','./manifest.json','./icon.svg','./vocab-data.js','./exam-data.js','./data/questions.js','./data/extra_questions.js','./config.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(SHELL).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>![SHELL,RUNTIME,'cet-study-cet4-resources-v1'].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
@@ -10,6 +10,6 @@ self.addEventListener('fetch',e=>{
   if(url.pathname.includes('/resources/')){
     e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{ const copy=r.clone(); caches.open(RUNTIME).then(c=>c.put(e.request,copy)); return r; }).catch(()=>hit)));
   } else {
-    e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{ const copy=r.clone(); caches.open(RUNTIME).then(c=>c.put(e.request,copy)); return r; })));
+    e.respondWith(fetch(e.request).then(r=>{ const copy=r.clone(); caches.open(RUNTIME).then(c=>c.put(e.request,copy)); return r; }).catch(()=>caches.match(e.request)));
   }
 });
