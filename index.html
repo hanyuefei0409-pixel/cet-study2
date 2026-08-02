@@ -302,7 +302,13 @@
     .viewer-head b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:14px; }
     .viewer-head small { color:var(--muted); font-size:10px; }
     .viewer-head a { color:var(--primary); text-decoration:none; font-size:12px; padding:10px 8px; }
-    .viewer-frame { flex:1; width:100%; border:0; background:#d9dee8; }
+    .pdf-stage { flex:1; min-height:0; overflow:auto; padding:14px 10px 92px; background:#d9dee8; text-align:center; -webkit-overflow-scrolling:touch; }
+    .pdf-stage canvas { display:block; max-width:100%; height:auto; margin:0 auto; background:#fff; box-shadow:0 3px 18px rgba(15,23,42,.18); }
+    .pdf-loading { padding:48px 16px; color:#667086; font-size:13px; }
+    .pdf-tools { position:absolute; z-index:2; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; align-items:center; gap:7px; padding:7px; border-radius:16px; background:rgba(23,32,51,.94); color:#fff; box-shadow:0 10px 30px rgba(15,23,42,.28); }
+    .pdf-tools button { min-width:38px; height:36px; padding:0 10px; border-radius:10px; color:#fff; background:rgba(255,255,255,.13); font-size:14px; }
+    .pdf-tools button:disabled { opacity:.35; }
+    .pdf-tools span { min-width:58px; font-size:12px; white-space:nowrap; }
     .audio-dock { position:fixed; z-index:85; left:50%; bottom:calc(74px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(500px,calc(100% - 24px)); background:#172033; color:#fff; padding:12px; border-radius:18px; box-shadow:0 20px 50px rgba(15,23,42,.32); display:none; }
     .audio-dock.show { display:block; }
     .audio-dock-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -548,7 +554,11 @@
     <div><b id="viewerTitle">查看资料</b><small id="viewerSubtitle">PDF</small></div>
     <span style="width:42px"></span>
   </div>
-  <iframe class="viewer-frame" id="viewerFrame" title="PDF资料"></iframe>
+  <div class="pdf-stage" id="pdfStage"><div class="pdf-loading" id="pdfLoading">正在准备站内阅读器…</div><canvas id="pdfCanvas" hidden></canvas></div>
+  <div class="pdf-tools" id="pdfTools">
+    <button id="pdfPrev" aria-label="上一页">‹</button><span id="pdfPage">0 / 0</span><button id="pdfNext" aria-label="下一页">›</button>
+    <button id="pdfZoomOut" aria-label="缩小">－</button><button id="pdfZoomIn" aria-label="放大">＋</button>
+  </div>
 </div>
 <div class="audio-dock" id="audioDock">
   <div class="audio-dock-top"><div><b id="audioTitle">四级真题听力</b><small id="audioMeta">真题音频</small></div><button id="audioClose">×</button></div>
@@ -916,16 +926,56 @@
       box.appendChild(card);
     });
   }
-  function openPdf(path,title,subtitle){
+  let pdfDocument=null, pdfPageNumber=1, pdfZoom=1, pdfRenderTask=null, pdfOpenToken=0;
+  let pdfJsPromise=null;
+  function getPdfJs(){
+    if(!pdfJsPromise) pdfJsPromise=import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.min.mjs').then(mod=>{
+      mod.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
+      return mod;
+    });
+    return pdfJsPromise;
+  }
+  async function renderPdfPage(){
+    if(!pdfDocument) return;
+    const token=pdfOpenToken, stage=document.getElementById('pdfStage'), canvas=document.getElementById('pdfCanvas');
+    if(pdfRenderTask) try{ pdfRenderTask.cancel(); }catch(_){ }
+    const page=await pdfDocument.getPage(pdfPageNumber); if(token!==pdfOpenToken) return;
+    const base=page.getViewport({scale:1});
+    const fit=Math.max(.35,(stage.clientWidth-20)/base.width);
+    const viewport=page.getViewport({scale:fit*pdfZoom});
+    const ratio=Math.min(window.devicePixelRatio||1,2), ctx=canvas.getContext('2d');
+    canvas.width=Math.floor(viewport.width*ratio); canvas.height=Math.floor(viewport.height*ratio);
+    canvas.style.width=Math.floor(viewport.width)+'px'; canvas.style.height=Math.floor(viewport.height)+'px'; canvas.hidden=false;
+    document.getElementById('pdfLoading').hidden=true;
+    pdfRenderTask=page.render({canvasContext:ctx,viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0]});
+    try{ await pdfRenderTask.promise; }catch(err){ if(err?.name!=='RenderingCancelledException') throw err; }
+    document.getElementById('pdfPage').textContent=`${pdfPageNumber} / ${pdfDocument.numPages}`;
+    document.getElementById('pdfPrev').disabled=pdfPageNumber<=1;
+    document.getElementById('pdfNext').disabled=pdfPageNumber>=pdfDocument.numPages;
+    stage.scrollTo({top:0,behavior:'smooth'});
+  }
+  async function openPdf(path,title,subtitle){
     if(!path) return toast('此资料未提供');
     examState.__last={path,title,time:Date.now()}; saveExamState();
     document.getElementById('viewerTitle').textContent=title;
     document.getElementById('viewerSubtitle').textContent=subtitle;
-    document.getElementById('viewerFrame').src=path+'#toolbar=1&navpanes=0';
     document.getElementById('resourceViewer').classList.add('show');
     document.body.style.overflow='hidden';
+    const token=++pdfOpenToken; pdfPageNumber=1; pdfZoom=1; pdfDocument=null;
+    const loading=document.getElementById('pdfLoading'), canvas=document.getElementById('pdfCanvas');
+    canvas.hidden=true; loading.hidden=false; loading.textContent='正在加载 PDF，请稍候…';
+    document.getElementById('pdfPage').textContent='0 / 0';
+    try{
+      const pdfjs=await getPdfJs(); if(token!==pdfOpenToken) return;
+      pdfDocument=await pdfjs.getDocument({url:path}).promise; if(token!==pdfOpenToken) return;
+      await renderPdfPage();
+    }catch(err){
+      console.error(err); loading.hidden=false; canvas.hidden=true;
+      loading.innerHTML='PDF 加载失败，请检查网络后重试。<br><button class="primary-btn" style="margin-top:14px" id="pdfRetry">重新加载</button>';
+      document.getElementById('pdfRetry').onclick=()=>openPdf(path,title,subtitle);
+    }
   }
-  function closeViewer(){ document.getElementById('resourceViewer').classList.remove('show'); document.getElementById('viewerFrame').src='about:blank'; document.body.style.overflow=''; }
+  function closeViewer(){ ++pdfOpenToken; if(pdfRenderTask) try{pdfRenderTask.cancel();}catch(_){ } if(pdfDocument) try{pdfDocument.destroy();}catch(_){ } pdfDocument=null; document.getElementById('resourceViewer').classList.remove('show'); document.body.style.overflow=''; }
   function playExamAudio(e){
     const a=document.getElementById('examAudio'); a.src=e.audio; document.getElementById('audioTitle').textContent=e.title+' · 听力'; document.getElementById('audioMeta').textContent=`真题原音频 · ${fmtDuration(e.audioDuration)}`; document.getElementById('audioDock').classList.add('show'); a.play().catch(()=>{}); examState[e.id]=Object.assign({},examState[e.id]||{},{lastOpened:Date.now()}); saveExamState();
   }
@@ -946,6 +996,10 @@
   document.getElementById('examMonth').onchange=renderExamLibrary;
   document.querySelectorAll('[data-efilter]').forEach(b=>b.onclick=()=>{ examFilter=b.dataset.efilter; renderExamLibrary(); });
   document.getElementById('viewerClose').onclick=closeViewer;
+  document.getElementById('pdfPrev').onclick=()=>{ if(pdfDocument&&pdfPageNumber>1){pdfPageNumber--;renderPdfPage();} };
+  document.getElementById('pdfNext').onclick=()=>{ if(pdfDocument&&pdfPageNumber<pdfDocument.numPages){pdfPageNumber++;renderPdfPage();} };
+  document.getElementById('pdfZoomOut').onclick=()=>{ if(pdfDocument){pdfZoom=Math.max(.6,pdfZoom-.2);renderPdfPage();} };
+  document.getElementById('pdfZoomIn').onclick=()=>{ if(pdfDocument){pdfZoom=Math.min(2.4,pdfZoom+.2);renderPdfPage();} };
   document.getElementById('audioClose').onclick=closeAudio;
   window.addEventListener('popstate',()=>{ if(document.getElementById('resourceViewer').classList.contains('show')) closeViewer(); });
   initExamFilters();
