@@ -183,7 +183,7 @@
     .mistake p { margin:0; color:var(--muted); font-size:12px; }
 
     .chat { display:flex; flex-direction:column; gap:10px; margin-bottom:80px; }
-    .bubble { max-width:86%; padding:12px 14px; border-radius:17px; font-size:14px; line-height:1.6; }
+    .bubble { max-width:86%; padding:12px 14px; border-radius:17px; font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
     .bubble.ai { align-self:flex-start; background:#fff; box-shadow:var(--shadow); border-bottom-left-radius:6px; }
     .bubble.me { align-self:flex-end; background:var(--primary); color:#fff; border-bottom-right-radius:6px; }
     .quick { display:flex; flex-wrap:wrap; gap:8px; }
@@ -870,17 +870,49 @@
     if(s.includes('425')||s.includes('过')) return '不要只盯着总分。优先保证阅读稳定、听力不崩，再通过写作与翻译减少低级错误，通常比盲目刷题更有效。';
     return '我已经记录你的问题。当前演示版使用离线规则回答；接入真实AI和题库后，可以根据你的错题、模考和学习时长给出个性化建议。';
   }
+  const chatHistory=[];
+  let chatBusy=false;
+  function assistantLearningContext(){
+    let mockMistakes=[];
+    try{mockMistakes=JSON.parse(localStorage.getItem('cetMockMistakes')||'[]')}catch(_error){}
+    const vocabProgress=Object.values(state.vocabStatus?.[state.level]||{});
+    return {
+      predictedScore:Number(state.score)||0,
+      targetScore:Number(state.target)||0,
+      daysUntilExam:daysBetween(),
+      dailyMinutes:Number(state.daily)||0,
+      completedTasks:state.tasks.filter(Boolean).length,
+      totalTasks:state.tasks.length,
+      streakDays:Number(state.streak)||0,
+      weekMinutes:Number(state.weekMinutes)||0,
+      savedMistakes:mockMistakes.filter(item=>!item.level||item.level===state.level).length,
+      learningWords:vocabProgress.filter(item=>item&&item.learning).length,
+      favoriteWords:vocabProgress.filter(item=>item&&item.favorite).length,
+      knownWeakPoints:['听力长对话后半段','阅读速度偏慢','写作观点需要具体例证']
+    };
+  }
+  function normalizeAssistantText(value){
+    return String(value||'').replace(/\*\*([^*]+)\*\*/g,'$1').replace(/^\s*#{1,6}\s+/gm,'').replace(/^\s*\*\s+/gm,'• ').trim();
+  }
   async function sendChat(text){
+    if(chatBusy) return;
     const q=(text||document.getElementById('chatInput').value).trim(); if(!q) return;
-    const box=document.getElementById('chatBox');
+    const box=document.getElementById('chatBox'), input=document.getElementById('chatInput'), sendButton=document.getElementById('sendChat');
     const me=document.createElement('div'); me.className='bubble me'; me.textContent=q; box.appendChild(me);
-    document.getElementById('chatInput').value='';
+    input.value=''; chatBusy=true; input.disabled=true; sendButton.disabled=true;
     const ai=document.createElement('div'); ai.className='bubble ai'; ai.textContent='正在思考…'; box.appendChild(ai);
-    if(!(window.CET_CONFIG?.aiEnabled && window.CET_CONFIG?.aiEndpoint)){ ai.textContent=aiReply(q); ai.scrollIntoView({behavior:'smooth',block:'end'}); return; }
+    if(!(window.CET_CONFIG?.aiEnabled && window.CET_CONFIG?.aiEndpoint)){
+      const answer=aiReply(q); ai.textContent=answer; chatHistory.push({role:'user',content:q},{role:'assistant',content:answer});
+      chatBusy=false; input.disabled=false; sendButton.disabled=false; input.focus(); ai.scrollIntoView({behavior:'smooth',block:'end'}); return;
+    }
     try{
-      const response=await fetch(window.CET_CONFIG.aiEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,level:state.level})});
-      const data=await response.json(); if(!response.ok) throw new Error(data.error||`请求失败 ${response.status}`); ai.textContent=data.answer||'暂时没有生成回答';
+      const response=await fetch(window.CET_CONFIG.aiEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:chatHistory.slice(-8),context:assistantLearningContext(),level:state.level})});
+      const data=await response.json(); if(!response.ok) throw new Error(data.error||`请求失败 ${response.status}`);
+      const answer=normalizeAssistantText(data.answer||'暂时没有生成回答'); ai.textContent=answer;
+      chatHistory.push({role:'user',content:q},{role:'assistant',content:answer});
+      if(chatHistory.length>10) chatHistory.splice(0,chatHistory.length-10);
     }catch(error){ ai.textContent='AI 暂时无法连接：'+error.message; }
+    finally{chatBusy=false; input.disabled=false; sendButton.disabled=false; input.focus();}
     ai.scrollIntoView({behavior:'smooth',block:'end'});
   }
   document.getElementById('sendChat').onclick=()=>sendChat();
