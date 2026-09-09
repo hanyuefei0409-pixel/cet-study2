@@ -607,10 +607,11 @@
 <div class="install-guide" id="installGuide" role="dialog" aria-modal="true" aria-labelledby="installGuideTitle">
   <div class="install-guide-card">
     <h2 id="installGuideTitle">安装丹·CET学习舱</h2>
-    <p>请先下载 APK，下载完成后到手机“文件管理”→“下载”中手动点击安装。页面不会自动跳转。</p>
-    <ol><li>点击“下载安卓安装包”。</li><li>允许浏览器安装未知应用。</li><li>回到“下载”文件夹点击 APK 完成安装。</li></ol>
+    <p>现在可以直接把网页安装成 App，不需要下载 APK。安装后从手机桌面打开，界面会以独立 App 形式运行。</p>
+    <ol><li>点击“安装到桌面”。</li><li>浏览器弹出提示后点击“安装”。</li><li>如果没有弹出提示，请打开浏览器菜单，选择“添加到主屏幕”或“安装应用”。</li></ol>
     <div class="install-guide-actions">
-      <a class="btn primary full" href="/downloads/cet-study2-honor-v21.apk" download>下载安卓安装包</a>
+      <button class="btn primary full" id="guideInstall">安装到桌面</button>
+      <a class="btn secondary full" href="/downloads/cet-study2-honor-v21.apk" download>备用：下载安卓安装包</a>
       <button class="btn secondary full" id="continueWeb">继续使用网页版</button>
     </div>
   </div>
@@ -806,6 +807,7 @@
   async function handleInstall(){if(deferredInstallPrompt){await deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;return}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);toast(ios?'请点浏览器“分享”→“添加到主屏幕”':'请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”')}
   document.getElementById('installApp').onclick=handleInstall;
   document.getElementById('installTop').onclick=handleInstall;
+  document.getElementById('guideInstall').onclick=handleInstall;
   const installGuide=document.getElementById('installGuide');
   function closeInstallGuide(){ installGuide.classList.remove('show'); const clean=new URL(location.href); clean.searchParams.delete('install'); history.replaceState(history.state,'',clean.href); }
   document.getElementById('continueWeb').onclick=closeInstallGuide;
