@@ -61,6 +61,9 @@
     .brand h1 { margin: 0; font-size: 17px; }
     .brand small { display:block; color: var(--muted); margin-top: 2px; }
     .icon-btn { width: 40px; height: 40px; border-radius: 14px; background: var(--surface); box-shadow: 0 5px 18px rgba(33,48,88,.08); }
+    .topbar-actions { display:flex; align-items:center; gap:8px; }
+    .install-top { display:none; padding:10px 12px; border-radius:13px; background:#eaf0ff; color:var(--primary); font-size:12px; font-weight:700; }
+    .install-top.show { display:block; }
 
     main { padding: 16px 16px 26px; }
     .screen { display: none; animation: fade .22s ease; }
@@ -347,7 +350,7 @@
       <div class="logo">丹</div>
       <div><h1>CET学习舱</h1><small id="subtitle">四级 · 标准计划</small></div>
     </div>
-    <button class="icon-btn" id="settingsBtn" aria-label="设置">⚙️</button>
+    <div class="topbar-actions"><button class="install-top" id="installTop">安装到桌面</button><button class="icon-btn" id="settingsBtn" aria-label="设置">⚙️</button></div>
   </header>
 
   <main>
@@ -798,9 +801,11 @@
     quizIndex=0; save(); appBack(); renderHeader(); renderHero(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes(); toast('设置已保存');
   };
   let deferredInstallPrompt=null;
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installHint').textContent='当前设备支持一键安装，点击上方按钮即可。'});
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installHint').textContent='当前设备支持一键安装，点击上方按钮即可。';document.getElementById('installTop').classList.add('show')});
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installHint').textContent='已安装，可以从手机桌面直接打开。';toast('丹·CET学习舱安装成功')});
-  document.getElementById('installApp').onclick=async()=>{if(deferredInstallPrompt){await deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;return}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);toast(ios?'请点浏览器“分享”→“添加到主屏幕”':'请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”')};
+  async function handleInstall(){if(deferredInstallPrompt){await deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;return}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);toast(ios?'请点浏览器“分享”→“添加到主屏幕”':'请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”')}
+  document.getElementById('installApp').onclick=handleInstall;
+  document.getElementById('installTop').onclick=handleInstall;
   const installGuide=document.getElementById('installGuide');
   function closeInstallGuide(){ installGuide.classList.remove('show'); const clean=new URL(location.href); clean.searchParams.delete('install'); history.replaceState(history.state,'',clean.href); }
   document.getElementById('continueWeb').onclick=closeInstallGuide;
