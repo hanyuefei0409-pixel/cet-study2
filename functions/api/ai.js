@@ -1,4 +1,5 @@
-const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const PRIMARY_MODEL = "@cf/openai/gpt-oss-120b";
+const FALLBACK_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const SYSTEM_PROMPT = `你是一名严谨、耐心、善于推理的通用 AI 助手。你擅长大学英语四六级，也可以回答日常知识、科技、历史、生活、写作、翻译、计算和其他常见问题。先判断用户真正想解决的任务，再用最直接的方式回答。你的首要任务是准确回答当前问题，并结合对话上下文理解“刚才”“这个词”“这句话”等指代。问题与英语学习无关时，按通用助手方式直接回答，不要强行联系四六级。
 
 回答要求：
@@ -39,6 +40,27 @@ function cleanLearningContext(value) {
   });
 }
 
+function answerFrom(result) {
+  return String(result?.response || result?.result?.response || "").trim();
+}
+
+async function runWithFallback(ai, input) {
+  try {
+    const result = await ai.run(PRIMARY_MODEL, input);
+    const answer = answerFrom(result);
+    if (answer) return { answer, model: PRIMARY_MODEL };
+    throw new Error("主模型未生成内容");
+  } catch (primaryError) {
+    console.warn(JSON.stringify({
+      message: "Primary AI model failed; using fallback",
+      model: PRIMARY_MODEL,
+      error: primaryError instanceof Error ? primaryError.message : String(primaryError)
+    }));
+    const result = await ai.run(FALLBACK_MODEL, input);
+    return { answer: answerFrom(result) || "暂时没有生成回答", model: FALLBACK_MODEL };
+  }
+}
+
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
@@ -49,7 +71,7 @@ export async function onRequestPost(context) {
     }
     const history = cleanHistory(body.history);
     const learningContext = cleanLearningContext(body.context);
-    const result = await context.env.AI.run(MODEL, {
+    const modelResult = await runWithFallback(context.env.AI, {
       messages: [
         { role: "system", content: `${SYSTEM_PROMPT}\n\n当前考试级别：${level}\n可用学习数据：${learningContext}` },
         ...history,
@@ -59,7 +81,7 @@ export async function onRequestPost(context) {
       temperature: 0.2,
       top_p: 0.9
     });
-    return Response.json({ answer: result?.response || result?.result?.response || "暂时没有生成回答" }, {
+    return Response.json({ answer: modelResult.answer }, {
       headers: { "Cache-Control": "no-store" }
     });
   } catch (error) {
