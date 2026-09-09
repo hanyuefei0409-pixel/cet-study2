@@ -218,6 +218,14 @@
 
     .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:110px; z-index:80; background:#172033; color:#fff; padding:11px 15px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; }
     .toast.show { opacity:1; transform:translate(-50%,-8px); }
+    .install-guide { position:fixed; inset:0; z-index:90; display:none; place-items:center; padding:22px; background:rgba(16,24,40,.52); }
+    .install-guide.show { display:grid; }
+    .install-guide-card { width:min(440px,100%); padding:24px 20px; border-radius:26px; background:#fff; box-shadow:0 24px 70px rgba(15,23,42,.28); }
+    .install-guide-card h2 { margin:0 0 8px; font-size:22px; }
+    .install-guide-card p { margin:8px 0; color:#667085; line-height:1.7; font-size:13px; }
+    .install-guide-card ol { margin:14px 0 18px; padding-left:22px; color:#344054; line-height:1.9; font-size:13px; }
+    .install-guide-actions { display:grid; gap:10px; }
+    .install-guide-actions a { display:block; text-align:center; text-decoration:none; }
 
 
     .vocab-page-head { display:flex; align-items:center; gap:12px; }
@@ -593,6 +601,17 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="install-guide" id="installGuide" role="dialog" aria-modal="true" aria-labelledby="installGuideTitle">
+  <div class="install-guide-card">
+    <h2 id="installGuideTitle">安装丹·CET学习舱</h2>
+    <p>请先下载 APK，下载完成后到手机“文件管理”→“下载”中手动点击安装。页面不会自动跳转。</p>
+    <ol><li>点击“下载安卓安装包”。</li><li>允许浏览器安装未知应用。</li><li>回到“下载”文件夹点击 APK 完成安装。</li></ol>
+    <div class="install-guide-actions">
+      <a class="btn primary full" href="/downloads/Dan-CET-Study-Android-v20.apk" download>下载安卓安装包</a>
+      <button class="btn secondary full" id="continueWeb">继续使用网页版</button>
+    </div>
+  </div>
+</div>
 
 <script src="vocab-data.js"></script>
 <script src="exam-data.js"></script>
@@ -782,6 +801,10 @@
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installHint').textContent='当前设备支持一键安装，点击上方按钮即可。'});
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installHint').textContent='已安装，可以从手机桌面直接打开。';toast('丹·CET学习舱安装成功')});
   document.getElementById('installApp').onclick=async()=>{if(deferredInstallPrompt){await deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;return}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);toast(ios?'请点浏览器“分享”→“添加到主屏幕”':'请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”')};
+  const installGuide=document.getElementById('installGuide');
+  function closeInstallGuide(){ installGuide.classList.remove('show'); const clean=new URL(location.href); clean.searchParams.delete('install'); history.replaceState(history.state,'',clean.href); }
+  document.getElementById('continueWeb').onclick=closeInstallGuide;
+  if(new URLSearchParams(location.search).get('install')) installGuide.classList.add('show');
 
 
   let vocabFilter='all';
