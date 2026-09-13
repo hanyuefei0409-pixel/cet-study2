@@ -302,6 +302,7 @@
     .ink-color.yellow { background:#ffd64c!important; }
     .dictation-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 18px 18px; }
     .dictation-actions .wide { grid-column:1 / -1; }
+    #dictationPrev { grid-column:1 / -1; }
     .dictation-actions[hidden], .ink-prompt[hidden] { display:none!important; }
     .dictation-progress { color:var(--muted); font-size:11px; margin-top:5px; }
     .tablet-mode-hint { display:none; margin:0 2px 12px; padding:10px 12px; border-radius:13px; color:#526078; background:#eef3ff; font-size:12px; }
@@ -509,7 +510,7 @@
       </div>
 
       <div class="tabs" id="vocabFilters">
-        <button class="pill active" data-vfilter="all">全部</button>
+        <button class="pill active" data-vfilter="all">待学习</button>
         <button class="pill" data-vfilter="review">待复习</button>
         <button class="pill" data-vfilter="mastered">已掌握</button>
         <button class="pill" data-vfilter="favorite">收藏</button>
@@ -573,6 +574,7 @@
             <button class="btn secondary wide" id="newPracticeLine">清空，重新练写</button>
           </div>
           <div class="dictation-actions" id="dictationInkActions" hidden>
+            <button class="btn secondary" id="dictationPrev" disabled>‹ 上一个词</button>
             <button class="btn primary wide" id="showDictationAnswer">查看正确答案</button>
             <button class="btn green" id="dictationCorrect" hidden>我写对了</button>
             <button class="btn orange" id="dictationWrong" hidden>我写错了</button>
@@ -794,6 +796,11 @@
     if(!store[key].learning && !store[key].favorite) delete store[key];
     save(); renderWord(); renderVocabScreen();
   }
+  function nextUnmasteredIndex(from=currentIndex(),direction=1){
+    const list=levelWords(),store=statusStore();if(!list.length)return-1;
+    for(let step=1;step<=list.length;step++){const i=(from+direction*step+list.length)%list.length;if(store[entryKey(list[i])]?.learning!=='mastered')return i}
+    return-1;
+  }
 
 
   function save(){ localStorage.setItem('cetWorkbenchState', JSON.stringify(state)); }
@@ -838,6 +845,9 @@
   }
   function prettyPhonetic(value){ return value ? `/${value.replace(/^\/+|\/+$/g,'')}/` : '音标未提供'; }
   function renderWord(){
+    if(!document.getElementById('vocabScreen')?.classList.contains('active')&&getWordStatus().learning==='mastered'){
+      const next=nextUnmasteredIndex();if(next>=0)state[indexProp()]=next;
+    }
     const w=currentEntry(), meta=levelMeta();
     document.getElementById('wordText').textContent=w[0];
     document.getElementById('phoneticText').textContent=prettyPhonetic(w[1]);
@@ -858,12 +868,12 @@
   function pushSubpage(view,extra={}){if(!restoringHistory)history.pushState({screen:document.querySelector('.screen.active')?.id||'homeScreen',view,...extra},'')}
   function appBack(fallback='homeScreen'){if(history.length>1)history.back();else{restoringHistory=true;navigate(fallback);restoringHistory=false}}
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
-  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ rememberTodayWord(); navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ if(getWordStatus().learning==='mastered'){const next=nextUnmasteredIndex();if(next>=0)state[indexProp()]=next}rememberTodayWord();save();navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
   document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); state.taskDate=localDayKey(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
-    const list=levelWords(), p=indexProp(); if(!list.length) return;
-    rememberTodayWord();state[p]=(currentIndex()+1)%list.length; save(); renderWord(); renderVocabScreen();
+    const list=levelWords(),p=indexProp();if(!list.length)return;
+    rememberTodayWord();const next=nextUnmasteredIndex();if(next<0)return toast('全部词汇都已掌握');state[p]=next;rememberTodayWord();save();renderWord();renderVocabScreen();
   }
   document.getElementById('nextWordTop').onclick=nextWord;
   document.getElementById('dontKnow').onclick=()=>{ setWordStatus({learning:'review'}); nextWord(); toast('已加入复习队列'); };
@@ -1041,6 +1051,7 @@
   function dailyWordLog(){try{return JSON.parse(localStorage.getItem('cetDailyWordLog')||'{}')}catch(_error){return{}}}
   function rememberTodayWord(entry=currentEntry()){
     if(!entry?.[0])return;
+    if(statusStore()[entryKey(entry)]?.learning==='mastered')return;
     const log=dailyWordLog(),key=`${localDayKey()}:${state.level}`,id=entryKey(entry),list=Array.isArray(log[key])?log[key]:[];
     if(!list.includes(id))list.push(id);log[key]=list;localStorage.setItem('cetDailyWordLog',JSON.stringify(log));
   }
@@ -1060,14 +1071,15 @@
     });
   }
   const vocabInkBoard=createCanvasInkBoard(document.getElementById('vocabInkCanvas'),document.getElementById('vocabInkSurface'));
-  let handwritingMode='practice',dictationQueue=[],dictationIndex=0,dictationCorrectCount=0,dictationWrongCount=0,dictationDone=false,dictationSeen=new Set();
+  let handwritingMode='practice',dictationQueue=[],dictationIndex=0,dictationCorrectCount=0,dictationWrongCount=0,dictationDone=false,dictationSeen=new Set(),dictationResults=new Map();
   function refreshPracticeInk(){
     const entry=currentEntry();document.getElementById('inkPracticeWord').textContent=entry[0];
     if(handwritingMode==='practice')setCanvasInkKey(vocabInkBoard,`vocab-practice:${state.level}:${entryKey(entry)}`);
   }
   function renderDictation(){
-    const meaning=document.getElementById('dictationMeaning'),answer=document.getElementById('dictationAnswer'),progress=document.getElementById('dictationProgress'),show=document.getElementById('showDictationAnswer'),yes=document.getElementById('dictationCorrect'),no=document.getElementById('dictationWrong');
+    const meaning=document.getElementById('dictationMeaning'),answer=document.getElementById('dictationAnswer'),progress=document.getElementById('dictationProgress'),show=document.getElementById('showDictationAnswer'),yes=document.getElementById('dictationCorrect'),no=document.getElementById('dictationWrong'),prev=document.getElementById('dictationPrev');
     answer.classList.remove('show');yes.hidden=true;no.hidden=true;
+    prev.disabled=dictationIndex<=0;
     if(dictationIndex>=dictationQueue.length){
       const queued=new Set(dictationQueue.map(entryKey)),extra=todayWordEntries().filter(e=>!dictationSeen.has(entryKey(e))&&!queued.has(entryKey(e)));
       if(extra.length)dictationQueue.push(...extra);
@@ -1077,7 +1089,7 @@
     dictationDone=false;const entry=dictationQueue[dictationIndex],total=todayWordEntries().length;meaning.textContent=entry[2];answer.textContent=entry[0];progress.textContent=`今日已默写 ${dictationSeen.size} / ${total} 词`;show.textContent='查看正确答案';show.hidden=false;
     setCanvasInkKey(vocabInkBoard,`dictation:${localDayKey()}:${state.level}:${entryKey(entry)}`);
   }
-  function startDictation(){dictationQueue=todayWordEntries().slice();dictationIndex=0;dictationCorrectCount=0;dictationWrongCount=0;dictationSeen=new Set();renderDictation()}
+  function startDictation(){dictationQueue=todayWordEntries().slice();dictationIndex=0;dictationCorrectCount=0;dictationWrongCount=0;dictationSeen=new Set();dictationResults=new Map();renderDictation()}
   function setHandwritingMode(mode){
     handwritingMode=mode;document.querySelectorAll('[data-ink-mode]').forEach(b=>b.classList.toggle('active',b.dataset.inkMode===mode));
     const dictation=mode==='dictation';document.getElementById('inkPracticePrompt').hidden=dictation;document.getElementById('dictationPrompt').hidden=!dictation;document.getElementById('practiceInkActions').hidden=dictation;document.getElementById('dictationInkActions').hidden=!dictation;
@@ -1090,10 +1102,12 @@
   document.querySelector('[data-ink-action="clear"]').onclick=()=>clearCanvasInk(vocabInkBoard);
   document.getElementById('newPracticeLine').onclick=()=>clearCanvasInk(vocabInkBoard);
   document.getElementById('showDictationAnswer').onclick=()=>{if(dictationDone)return;document.getElementById('dictationAnswer').classList.add('show');document.getElementById('dictationCorrect').hidden=false;document.getElementById('dictationWrong').hidden=false;document.getElementById('showDictationAnswer').hidden=true};
+  document.getElementById('dictationPrev').onclick=()=>{if(dictationIndex<=0)return;dictationIndex--;dictationDone=false;renderDictation()};
   function finishDictationWord(correct){
     const entry=dictationQueue[dictationIndex];if(!entry)return;
     const history=JSON.parse(localStorage.getItem('cetDictationHistory')||'[]');history.push({date:localDayKey(),level:state.level,word:entry[0],correct,time:Date.now()});localStorage.setItem('cetDictationHistory',JSON.stringify(history.slice(-500)));
-    dictationSeen.add(entryKey(entry));if(correct)dictationCorrectCount++;else{dictationWrongCount++;const store=statusStore(),key=entryKey(entry);store[key]=Object.assign({},store[key]||{},{learning:'review'});save()}
+    const key=entryKey(entry),previous=dictationResults.get(key);if(previous===true)dictationCorrectCount--;if(previous===false)dictationWrongCount--;
+    dictationResults.set(key,correct);dictationSeen.add(key);if(correct)dictationCorrectCount++;else{dictationWrongCount++;const store=statusStore();store[key]=Object.assign({},store[key]||{},{learning:'review'});save()}
     dictationIndex++;renderDictation();
   }
   document.getElementById('dictationCorrect').onclick=()=>finishDictationWord(true);
@@ -1107,6 +1121,7 @@
     const out=[];
     for(let i=0;i<list.length;i++){
       const e=list[i], st=store[entryKey(e)]||{};
+      if(vocabFilter==='all' && st.learning==='mastered') continue;
       if(vocabFilter==='review' && st.learning!=='review') continue;
       if(vocabFilter==='mastered' && st.learning!=='mastered') continue;
       if(vocabFilter==='favorite' && !st.favorite) continue;
@@ -1116,7 +1131,11 @@
     return out;
   }
   function goVocab(delta){
-    const indices=filteredWordIndices(), p=indexProp();
+    const p=indexProp();
+    if(vocabFilter==='all'){
+      const next=nextUnmasteredIndex(currentIndex(),delta);if(next<0)return toast('全部词汇都已掌握');state[p]=next;rememberTodayWord();save();renderWord();renderVocabScreen();return;
+    }
+    const indices=filteredWordIndices();
     if(!indices.length) return toast('当前筛选没有词汇');
     let pos=indices.indexOf(currentIndex());
     if(pos<0) pos=0; else pos=(pos+delta+indices.length)%indices.length;
@@ -1150,7 +1169,7 @@
     let mastered=0, review=0;
     Object.values(store).forEach(x=>{ if(x.learning==='mastered') mastered++; if(x.learning==='review') review++; });
     document.getElementById('vocabTitle').textContent=`${state.level==='CET-4'?'四级':'六级'}完整词库`;
-    document.getElementById('vocabSubtitle').textContent=`按上传资料原顺序学习 · 共 ${list.length} 词`;
+    document.getElementById('vocabSubtitle').textContent=`已掌握长期保留 · 默认继续学习未掌握词 · 共 ${list.length} 词`;
     document.getElementById('vocabTotal').textContent=list.length;
     document.getElementById('vocabMastered').textContent=mastered;
     document.getElementById('vocabReview').textContent=review;
@@ -1174,10 +1193,10 @@
   document.getElementById('prevVocab').onclick=()=>goVocab(-1);
   document.getElementById('nextVocab').onclick=()=>goVocab(1);
   document.getElementById('markReview').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='review'?null:'review'}); toast('复习状态已更新'); };
-  document.getElementById('markMastered').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='mastered'?null:'mastered'}); toast('掌握状态已更新'); };
+  document.getElementById('markMastered').onclick=()=>{const wasMastered=getWordStatus().learning==='mastered';setWordStatus({learning:wasMastered?null:'mastered'});if(!wasMastered&&vocabFilter==='all')goVocab(1);toast(wasMastered?'已取消掌握标记':'已长期保存，并进入下一个未掌握词'); };
   document.getElementById('toggleFavorite').onclick=()=>{ setWordStatus({favorite:!getWordStatus().favorite}); toast(getWordStatus().favorite?'已收藏':'已取消收藏'); };
   document.getElementById('speakWord').onclick=speakCurrentWord;
-  document.getElementById('randomWord').onclick=()=>{ const list=levelWords(); state[indexProp()]=Math.floor(Math.random()*list.length); rememberTodayWord();save(); renderWord(); renderVocabScreen(); };
+  document.getElementById('randomWord').onclick=()=>{const indices=filteredWordIndices();if(!indices.length)return toast(vocabFilter==='all'?'全部词汇都已掌握':'当前筛选没有词汇');state[indexProp()]=indices[Math.floor(Math.random()*indices.length)];rememberTodayWord();save();renderWord();renderVocabScreen();};
   document.getElementById('vocabSearch').addEventListener('input',()=>renderVocabScreen());
   document.querySelectorAll('[data-vfilter]').forEach(b=>b.onclick=()=>{ vocabFilter=b.dataset.vfilter; renderVocabScreen(); });
 
