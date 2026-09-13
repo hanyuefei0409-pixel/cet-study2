@@ -267,10 +267,50 @@
     .source-note { margin-top:14px; padding:14px 16px; color:#657087; background:#eef3ff; border-radius:17px; font-size:12px; line-height:1.7; }
     .daily-source { display:inline-block; margin-top:10px; color:var(--primary); font-size:11px; background:#eef3ff; border-radius:999px; padding:6px 9px; }
 
+    /* 平板手写学习 */
+    .tablet-vocab-layout { display:block; }
+    .tablet-handwriting { display:none; overflow:hidden; background:#fff; }
+    .handwriting-preview .tablet-handwriting { display:block; margin-top:14px; }
+    .ink-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 18px 12px; }
+    .ink-panel-head h3 { margin:0 0 5px; font-size:18px; }
+    .ink-panel-head p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+    .pen-only-badge { flex:0 0 auto; padding:7px 10px; border-radius:999px; color:#1a6c4c; background:#eaf8f1; font-size:11px; font-weight:700; }
+    .ink-mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 18px 12px; }
+    .ink-mode-tabs button { padding:11px 12px; border-radius:13px; color:#657087; background:#f0f3f8; font-weight:700; }
+    .ink-mode-tabs button.active { color:#fff; background:var(--primary); }
+    .ink-prompt { margin:0 18px 12px; padding:13px 14px; border-radius:15px; background:#f6f8fc; color:#526078; font-size:13px; line-height:1.65; }
+    .ink-prompt b { color:var(--text); font-size:18px; }
+    .dictation-meaning { color:var(--text); font-size:18px; font-weight:750; }
+    .dictation-answer { display:none; margin-top:8px; color:var(--primary); font-size:22px; font-weight:800; letter-spacing:.4px; }
+    .dictation-answer.show { display:block; }
+    .ink-surface { position:relative; margin:0 18px; overflow:hidden; border:1px solid #dce3ef; border-radius:18px; background-color:#fff; background-image:linear-gradient(#eaf0fa 1px,transparent 1px),linear-gradient(90deg,#f1f4fa 1px,transparent 1px); background-size:100% 42px,42px 100%; }
+    .ink-surface:before { content:"用手写笔在这里书写"; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); color:#b1b9c8; font-size:14px; text-align:center; pointer-events:none; }
+    .ink-surface.has-ink:before { display:none; }
+    .ink-canvas { position:relative; z-index:1; display:block; width:100%; height:310px; background:transparent; touch-action:pan-y pinch-zoom; }
+    .ink-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:7px; padding:12px 18px; }
+    .ink-toolbar button { min-height:34px; padding:0 11px; border-radius:10px; color:#5d687d; background:#f0f3f8; font-size:12px; font-weight:700; }
+    .ink-toolbar button.active { color:#fff; background:#243b76; }
+    .ink-color { width:31px; min-width:31px!important; padding:0!important; border:3px solid transparent; border-radius:50%!important; }
+    .ink-color.active { border-color:#a9bbef!important; box-shadow:0 0 0 2px #fff inset; }
+    .ink-color.blue { background:#3568ff!important; }
+    .ink-color.black { background:#172033!important; }
+    .ink-color.red { background:#e04855!important; }
+    .ink-color.yellow { background:#ffd64c!important; }
+    .dictation-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 18px 18px; }
+    .dictation-actions .wide { grid-column:1 / -1; }
+    .dictation-actions[hidden], .ink-prompt[hidden] { display:none!important; }
+    .dictation-progress { color:var(--muted); font-size:11px; margin-top:5px; }
+    .tablet-mode-hint { display:none; margin:0 2px 12px; padding:10px 12px; border-radius:13px; color:#526078; background:#eef3ff; font-size:12px; }
+    .handwriting-preview .tablet-mode-hint { display:block; }
+
     @media (min-width: 700px) {
       body { padding:20px 0; }
-      .app { min-height:calc(100vh - 40px); border-radius:34px; overflow:hidden; box-shadow:0 28px 80px rgba(33,48,88,.18); }
-      .nav { bottom:20px; border-radius:0 0 34px 34px; }
+      .app { max-width:min(1180px,calc(100% - 32px)); min-height:calc(100vh - 40px); border-radius:34px; overflow:hidden; box-shadow:0 28px 80px rgba(33,48,88,.18); }
+      .nav { width:min(1180px,calc(100% - 32px)); bottom:20px; border-radius:0 0 34px 34px; }
+      .chat-input { width:min(1180px,calc(100% - 32px)); }
+      .tablet-vocab-layout { display:grid; grid-template-columns:minmax(0,.9fr) minmax(390px,1.1fr); gap:16px; align-items:start; }
+      .tablet-handwriting { display:block; }
+      .tablet-mode-hint { display:block; }
     }
 
 
@@ -316,8 +356,15 @@
     .viewer-head b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:14px; }
     .viewer-head small { color:var(--muted); font-size:10px; }
     .viewer-head a { color:var(--primary); text-decoration:none; font-size:12px; padding:10px 8px; }
-    .pdf-stage { flex:1; min-height:0; overflow:auto; padding:14px 10px 92px; background:#d9dee8; text-align:center; -webkit-overflow-scrolling:touch; }
-    .pdf-stage canvas { display:block; max-width:100%; height:auto; margin:0 auto; background:#fff; box-shadow:0 3px 18px rgba(15,23,42,.18); }
+    .pdf-stage { flex:1; min-height:0; overflow:auto; padding:14px 10px 92px; background:#d9dee8; text-align:center; -webkit-overflow-scrolling:touch; touch-action:pan-y pinch-zoom; }
+    .pdf-page-shell { position:relative; display:inline-block; max-width:100%; vertical-align:top; }
+    .pdf-stage #pdfCanvas { display:block; max-width:100%; height:auto; margin:0 auto; background:#fff; box-shadow:0 3px 18px rgba(15,23,42,.18); }
+    .pdf-ink-canvas { position:absolute; z-index:3; inset:0; width:100%; height:100%; max-width:none!important; margin:0!important; background:transparent!important; box-shadow:none!important; touch-action:pan-y pinch-zoom; }
+    .pdf-ink-tools { display:none; position:absolute; z-index:5; right:18px; top:calc(70px + env(safe-area-inset-top)); align-items:center; flex-wrap:wrap; gap:6px; max-width:min(620px,calc(100% - 36px)); padding:7px; border-radius:15px; background:rgba(255,255,255,.95); box-shadow:0 10px 28px rgba(15,23,42,.18); }
+    .pdf-ink-tools span { padding:0 7px; color:#526078; font-size:11px; font-weight:700; }
+    .pdf-ink-tools button { min-height:34px; padding:0 10px; border-radius:10px; color:#526078; background:#eef2f8; font-size:12px; font-weight:700; }
+    .pdf-ink-tools button.active { color:#fff; background:#243b76; }
+    .pdf-ink-tools .ink-color { min-height:31px; }
     .pdf-loading { padding:48px 16px; color:#667086; font-size:13px; }
     .pdf-tools { position:absolute; z-index:2; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; align-items:center; gap:7px; padding:7px; border-radius:16px; background:rgba(23,32,51,.94); color:#fff; box-shadow:0 10px 30px rgba(15,23,42,.28); }
     .pdf-tools button { min-width:38px; height:36px; padding:0 10px; border-radius:10px; color:#fff; background:rgba(255,255,255,.13); font-size:14px; }
@@ -340,6 +387,15 @@
     .home-resource-main b { display:block; font-size:15px; }
     .home-resource-main small { display:block; color:var(--muted); margin-top:5px; font-size:11px; line-height:1.5; }
     .home-resource-arrow { color:var(--primary); font-size:21px; }
+
+    .mock-ink-toolbar { display:none; position:sticky; top:78px; z-index:12; align-items:center; flex-wrap:wrap; gap:7px; margin:0 0 12px; padding:8px 10px; border:1px solid #dfe5ef; border-radius:15px; background:rgba(255,255,255,.96); box-shadow:0 8px 22px rgba(33,48,88,.09); }
+    .mock-ink-toolbar span { margin-right:auto; color:#526078; font-size:11px; font-weight:700; }
+    .mock-ink-toolbar button { min-height:34px; padding:0 10px; border-radius:10px; color:#526078; background:#eef2f8; font-size:12px; font-weight:700; }
+    .mock-ink-toolbar button.active { color:#fff; background:#243b76; }
+    .mock-ink-layer { position:absolute; z-index:9; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+    @media (min-width:700px) {
+      .pdf-ink-tools, .mock-ink-toolbar { display:flex; }
+    }
 
   </style>
 </head>
@@ -451,26 +507,65 @@
         <button class="small-action" id="randomWord">随机</button>
       </div>
 
-      <div class="card vocab-card full-vocab-card">
-        <div class="word-card-top">
-          <span class="source-badge" id="vocabSourceBadge">CET-4 · 原表音标</span>
-          <button class="speaker-btn" id="speakWord" aria-label="朗读单词">🔊</button>
-        </div>
-        <div class="word" id="vocabWord">plastic</div>
-        <div class="phonetic" id="vocabPhonetic">/'plæstik/</div>
-        <div class="meaning" id="vocabMeaning">adj.可塑料的；n.塑料</div>
-        <div class="word-source" id="vocabPageSource">来源：四级词汇表第1页 · 原序号1</div>
-      </div>
+      <div class="tablet-mode-hint">✒️ 平板模式：手写笔负责书写，手指仍可上下滑动页面。</div>
+      <div class="tablet-vocab-layout">
+        <div class="vocab-learning-column">
+          <div class="card vocab-card full-vocab-card">
+            <div class="word-card-top">
+              <span class="source-badge" id="vocabSourceBadge">CET-4 · 原表音标</span>
+              <button class="speaker-btn" id="speakWord" aria-label="朗读单词">🔊</button>
+            </div>
+            <div class="word" id="vocabWord">plastic</div>
+            <div class="phonetic" id="vocabPhonetic">/'plæstik/</div>
+            <div class="meaning" id="vocabMeaning">adj.可塑料的；n.塑料</div>
+            <div class="word-source" id="vocabPageSource">来源：四级词汇表第1页 · 原序号1</div>
+          </div>
 
-      <div class="word-progress">
-        <div class="word-progress-line"><span id="wordPosition">1 / 4449</span><span id="wordStateText">尚未标记</span></div>
-        <div class="bar"><span id="wordProgressBar"></span></div>
-      </div>
-      <div class="vocab-actions"><button class="btn secondary" id="prevVocab">上一个</button><button class="btn primary" id="nextVocab">下一个</button></div>
-      <div class="triple-actions">
-        <button class="btn orange" id="markReview">还不熟</button>
-        <button class="btn green" id="markMastered">已掌握</button>
-        <button class="btn secondary favorite" id="toggleFavorite">☆ 收藏</button>
+          <div class="word-progress">
+            <div class="word-progress-line"><span id="wordPosition">1 / 4449</span><span id="wordStateText">尚未标记</span></div>
+            <div class="bar"><span id="wordProgressBar"></span></div>
+          </div>
+          <div class="vocab-actions"><button class="btn secondary" id="prevVocab">上一个</button><button class="btn primary" id="nextVocab">下一个</button></div>
+          <div class="triple-actions">
+            <button class="btn orange" id="markReview">还不熟</button>
+            <button class="btn green" id="markMastered">已掌握</button>
+            <button class="btn secondary favorite" id="toggleFavorite">☆ 收藏</button>
+          </div>
+        </div>
+
+        <section class="card tablet-handwriting" id="vocabInkPanel">
+          <div class="ink-panel-head">
+            <div><h3>平板手写区</h3><p>练写单词，或根据中文进行默写</p></div>
+            <span class="pen-only-badge">✒️ 仅手写笔书写</span>
+          </div>
+          <div class="ink-mode-tabs">
+            <button class="active" data-ink-mode="practice">照词练写</button>
+            <button data-ink-mode="dictation">今日默写</button>
+          </div>
+          <div class="ink-prompt" id="inkPracticePrompt">请照着写：<b id="inkPracticeWord">plastic</b></div>
+          <div class="ink-prompt" id="dictationPrompt" hidden>
+            <div class="dictation-meaning" id="dictationMeaning">塑料</div>
+            <div class="dictation-answer" id="dictationAnswer">plastic</div>
+            <div class="dictation-progress" id="dictationProgress">今日第 1 / 1 词</div>
+          </div>
+          <div class="ink-surface" id="vocabInkSurface"><canvas class="ink-canvas" id="vocabInkCanvas" aria-label="单词手写区"></canvas></div>
+          <div class="ink-toolbar" id="vocabInkToolbar">
+            <button class="ink-color blue active" data-ink-color="#3568ff" aria-label="蓝色笔"></button>
+            <button class="ink-color black" data-ink-color="#172033" aria-label="黑色笔"></button>
+            <button class="ink-color red" data-ink-color="#e04855" aria-label="红色笔"></button>
+            <button data-ink-tool="eraser">橡皮</button>
+            <button data-ink-action="undo">撤销</button>
+            <button data-ink-action="clear">清空</button>
+          </div>
+          <div class="dictation-actions" id="practiceInkActions">
+            <button class="btn secondary wide" id="newPracticeLine">清空，重新练写</button>
+          </div>
+          <div class="dictation-actions" id="dictationInkActions" hidden>
+            <button class="btn primary wide" id="showDictationAnswer">查看正确答案</button>
+            <button class="btn green" id="dictationCorrect" hidden>我写对了</button>
+            <button class="btn orange" id="dictationWrong" hidden>我写错了</button>
+          </div>
+        </section>
       </div>
 
       <div class="card vocab-list" id="vocabResults"></div>
@@ -580,7 +675,16 @@
     <div><b id="viewerTitle">查看资料</b><small id="viewerSubtitle">PDF</small></div>
     <span style="width:42px"></span>
   </div>
-  <div class="pdf-stage" id="pdfStage"><div class="pdf-loading" id="pdfLoading">正在准备站内阅读器…</div><canvas id="pdfCanvas" hidden></canvas></div>
+  <div class="pdf-stage" id="pdfStage"><div class="pdf-loading" id="pdfLoading">正在准备站内阅读器…</div><div class="pdf-page-shell" id="pdfPageShell"><canvas id="pdfCanvas" hidden></canvas><canvas class="pdf-ink-canvas" id="pdfInkCanvas" hidden aria-label="试卷手写笔迹层"></canvas></div></div>
+  <div class="pdf-ink-tools" id="pdfInkTools">
+    <span>✒️ 笔写字 · 手指滑动</span>
+    <button class="ink-color blue active" data-pdf-ink-color="#3568ff" aria-label="蓝色笔"></button>
+    <button class="ink-color black" data-pdf-ink-color="#172033" aria-label="黑色笔"></button>
+    <button class="ink-color red" data-pdf-ink-color="#e04855" aria-label="红色笔"></button>
+    <button class="ink-color yellow" data-pdf-ink-highlighter aria-label="荧光笔"></button>
+    <button data-pdf-ink-tool="eraser">橡皮</button>
+    <button id="pdfInkUndo">撤销</button><button id="pdfInkClear">清空本页</button>
+  </div>
   <div class="pdf-tools" id="pdfTools">
     <button id="pdfPrev" aria-label="上一页">‹</button><span id="pdfPage">0 / 0</span><button id="pdfNext" aria-label="下一页">›</button>
     <button id="pdfZoomOut" aria-label="缩小">－</button><button id="pdfZoomIn" aria-label="放大">＋</button>
@@ -666,6 +770,7 @@
   function getWordStatus(entry=currentEntry()){ return statusStore()[entryKey(entry)] || {}; }
   function setWordStatus(patch){
     const e=currentEntry(), store=statusStore(), key=entryKey(e);
+    rememberTodayWord(e);
     store[key]=Object.assign({},store[key]||{},patch);
     if(!store[key].learning && !store[key].favorite) delete store[key];
     save(); renderWord(); renderVocabScreen();
@@ -733,12 +838,12 @@
   function pushSubpage(view,extra={}){if(!restoringHistory)history.pushState({screen:document.querySelector('.screen.active')?.id||'homeScreen',view,...extra},'')}
   function appBack(fallback='homeScreen'){if(history.length>1)history.back();else{restoringHistory=true;navigate(fallback);restoringHistory=false}}
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
-  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ rememberTodayWord(); navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
   document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); state.taskDate=localDayKey(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
     const list=levelWords(), p=indexProp(); if(!list.length) return;
-    state[p]=(currentIndex()+1)%list.length; save(); renderWord(); renderVocabScreen();
+    rememberTodayWord();state[p]=(currentIndex()+1)%list.length; save(); renderWord(); renderVocabScreen();
   }
   document.getElementById('nextWordTop').onclick=nextWord;
   document.getElementById('dontKnow').onclick=()=>{ setWordStatus({learning:'review'}); nextWord(); toast('已加入复习队列'); };
@@ -814,6 +919,132 @@
   if(new URLSearchParams(location.search).get('install')) installGuide.classList.add('show');
 
 
+  // ===== 平板手写笔迹存储与画板 =====
+  const inkCache=new Map();
+  let inkDbPromise=null;
+  function openInkDb(){
+    if(!('indexedDB' in window)) return Promise.resolve(null);
+    if(!inkDbPromise) inkDbPromise=new Promise(resolve=>{
+      const request=indexedDB.open('cet-study-ink-v1',1);
+      request.onupgradeneeded=()=>request.result.createObjectStore('boards');
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>resolve(null);
+    });
+    return inkDbPromise;
+  }
+  async function loadInkData(key){
+    if(inkCache.has(key)) return JSON.parse(JSON.stringify(inkCache.get(key)));
+    const db=await openInkDb();
+    if(!db) return [];
+    return new Promise(resolve=>{
+      const req=db.transaction('boards','readonly').objectStore('boards').get(key);
+      req.onsuccess=()=>{const value=Array.isArray(req.result)?req.result:[];inkCache.set(key,value);resolve(JSON.parse(JSON.stringify(value)))};
+      req.onerror=()=>resolve([]);
+    });
+  }
+  async function saveInkData(key,value){
+    if(!key) return;
+    inkCache.set(key,JSON.parse(JSON.stringify(value)));
+    const db=await openInkDb();
+    if(!db) return;
+    try{db.transaction('boards','readwrite').objectStore('boards').put(value,key)}catch(_error){}
+  }
+  function createCanvasInkBoard(canvas,surface){
+    const board={canvas,surface,key:'',strokes:[],undone:[],drawing:null,color:'#3568ff',width:3,tool:'pen',loadToken:0};
+    const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/Math.max(1,r.width),y:(e.clientY-r.top)/Math.max(1,r.height),p:Number(e.pressure)||.5}};
+    canvas.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='pen') return;
+      e.preventDefault();
+      canvas.setPointerCapture?.(e.pointerId);
+      board.undone=[];
+      board.drawing={color:board.color,width:board.width,tool:board.tool,points:[point(e)]};
+      board.strokes.push(board.drawing);
+      surface?.classList.add('has-ink');
+      redrawCanvasInkBoard(board);
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(!board.drawing||e.pointerType!=='pen') return;
+      e.preventDefault();
+      const events=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+      events.forEach(x=>board.drawing.points.push(point(x)));
+      redrawCanvasInkBoard(board);
+    });
+    const finish=e=>{if(!board.drawing||e.pointerType!=='pen')return;board.drawing=null;saveInkData(board.key,board.strokes)};
+    canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
+    return board;
+  }
+  function resizeCanvasInkBoard(board,width,height){
+    if(!width)board.canvas.style.width='100%';if(!height&&board.surface)board.canvas.style.height='310px';
+    const rect=board.canvas.getBoundingClientRect(),cssW=Math.max(1,width||board.surface?.clientWidth||rect.width),cssH=Math.max(1,height||(board.surface?310:rect.height)),ratio=Math.min(window.devicePixelRatio||1,2);
+    board.canvas.width=Math.round(cssW*ratio);board.canvas.height=Math.round(cssH*ratio);
+    board.canvas.style.width=cssW+'px';board.canvas.style.height=cssH+'px';
+    board.ratio=ratio;board.cssW=cssW;board.cssH=cssH;redrawCanvasInkBoard(board);
+  }
+  function redrawCanvasInkBoard(board){
+    const ctx=board.canvas.getContext('2d'),w=board.cssW||board.canvas.clientWidth,h=board.cssH||board.canvas.clientHeight,ratio=board.ratio||1;
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,board.canvas.width,board.canvas.height);ctx.setTransform(ratio,0,0,ratio,0,0);
+    board.strokes.forEach(stroke=>{
+      if(!stroke.points?.length)return;
+      ctx.save();ctx.globalCompositeOperation=stroke.tool==='eraser'?'destination-out':'source-over';ctx.strokeStyle=stroke.color;ctx.lineWidth=stroke.width;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.beginPath();const first=stroke.points[0];ctx.moveTo(first.x*w,first.y*h);
+      if(stroke.points.length===1)ctx.lineTo(first.x*w+.1,first.y*h+.1);else stroke.points.slice(1).forEach(p=>ctx.lineTo(p.x*w,p.y*h));
+      ctx.stroke();ctx.restore();
+    });
+    board.surface?.classList.toggle('has-ink',board.strokes.length>0);
+  }
+  async function setCanvasInkKey(board,key,width,height){
+    const token=++board.loadToken;board.key=key;board.strokes=[];board.undone=[];resizeCanvasInkBoard(board,width,height);
+    const saved=await loadInkData(key);if(token!==board.loadToken)return;board.strokes=saved;redrawCanvasInkBoard(board);
+  }
+  function undoCanvasInk(board){const stroke=board.strokes.pop();if(stroke)board.undone.push(stroke);redrawCanvasInkBoard(board);saveInkData(board.key,board.strokes)}
+  function clearCanvasInk(board){board.strokes=[];board.undone=[];redrawCanvasInkBoard(board);saveInkData(board.key,board.strokes)}
+
+  function dailyWordLog(){try{return JSON.parse(localStorage.getItem('cetDailyWordLog')||'{}')}catch(_error){return{}}}
+  function rememberTodayWord(entry=currentEntry()){
+    if(!entry?.[0])return;
+    const log=dailyWordLog(),key=`${localDayKey()}:${state.level}`,id=entryKey(entry),list=Array.isArray(log[key])?log[key]:[];
+    if(!list.includes(id))list.push(id);log[key]=list.slice(-80);localStorage.setItem('cetDailyWordLog',JSON.stringify(log));
+  }
+  function todayWordEntries(){
+    const ids=dailyWordLog()[`${localDayKey()}:${state.level}`]||[],list=levelWords(),byId=new Map(list.map(e=>[entryKey(e),e]));
+    const words=ids.map(id=>byId.get(String(id))).filter(Boolean);return words.length?words:[currentEntry()];
+  }
+  const vocabInkBoard=createCanvasInkBoard(document.getElementById('vocabInkCanvas'),document.getElementById('vocabInkSurface'));
+  let handwritingMode='practice',dictationQueue=[],dictationIndex=0,dictationCorrectCount=0,dictationWrongCount=0,dictationDone=false;
+  function refreshPracticeInk(){
+    const entry=currentEntry();document.getElementById('inkPracticeWord').textContent=entry[0];
+    if(handwritingMode==='practice')setCanvasInkKey(vocabInkBoard,`vocab-practice:${state.level}:${entryKey(entry)}`);
+  }
+  function renderDictation(){
+    const meaning=document.getElementById('dictationMeaning'),answer=document.getElementById('dictationAnswer'),progress=document.getElementById('dictationProgress'),show=document.getElementById('showDictationAnswer'),yes=document.getElementById('dictationCorrect'),no=document.getElementById('dictationWrong');
+    answer.classList.remove('show');yes.hidden=true;no.hidden=true;
+    if(dictationIndex>=dictationQueue.length){dictationDone=true;meaning.textContent=`本轮完成：写对 ${dictationCorrectCount} 次，重写 ${dictationWrongCount} 次`;progress.textContent='点击下面按钮可以再默写一轮';show.textContent='重新开始今日默写';show.hidden=false;setCanvasInkKey(vocabInkBoard,`dictation-finished:${localDayKey()}:${state.level}`);return}
+    dictationDone=false;const entry=dictationQueue[dictationIndex];meaning.textContent=entry[2];answer.textContent=entry[0];progress.textContent=`今日第 ${dictationIndex+1} / ${dictationQueue.length} 词`;show.textContent='查看正确答案';show.hidden=false;
+    setCanvasInkKey(vocabInkBoard,`dictation:${localDayKey()}:${state.level}:${entryKey(entry)}:${dictationIndex}`);
+  }
+  function startDictation(){dictationQueue=todayWordEntries().slice();dictationIndex=0;dictationCorrectCount=0;dictationWrongCount=0;renderDictation()}
+  function setHandwritingMode(mode){
+    handwritingMode=mode;document.querySelectorAll('[data-ink-mode]').forEach(b=>b.classList.toggle('active',b.dataset.inkMode===mode));
+    const dictation=mode==='dictation';document.getElementById('inkPracticePrompt').hidden=dictation;document.getElementById('dictationPrompt').hidden=!dictation;document.getElementById('practiceInkActions').hidden=dictation;document.getElementById('dictationInkActions').hidden=!dictation;
+    if(dictation)startDictation();else refreshPracticeInk();
+  }
+  document.querySelectorAll('[data-ink-mode]').forEach(b=>b.onclick=()=>setHandwritingMode(b.dataset.inkMode));
+  document.querySelectorAll('[data-ink-color]').forEach(b=>b.onclick=()=>{vocabInkBoard.color=b.dataset.inkColor;vocabInkBoard.width=3;vocabInkBoard.tool='pen';document.querySelectorAll('#vocabInkToolbar button').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
+  document.querySelector('[data-ink-tool="eraser"]').onclick=e=>{vocabInkBoard.tool='eraser';vocabInkBoard.width=22;document.querySelectorAll('#vocabInkToolbar button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
+  document.querySelector('[data-ink-action="undo"]').onclick=()=>undoCanvasInk(vocabInkBoard);
+  document.querySelector('[data-ink-action="clear"]').onclick=()=>clearCanvasInk(vocabInkBoard);
+  document.getElementById('newPracticeLine').onclick=()=>clearCanvasInk(vocabInkBoard);
+  document.getElementById('showDictationAnswer').onclick=()=>{if(dictationDone)return startDictation();document.getElementById('dictationAnswer').classList.add('show');document.getElementById('dictationCorrect').hidden=false;document.getElementById('dictationWrong').hidden=false;document.getElementById('showDictationAnswer').hidden=true};
+  function finishDictationWord(correct){
+    const entry=dictationQueue[dictationIndex];if(!entry)return;
+    const history=JSON.parse(localStorage.getItem('cetDictationHistory')||'[]');history.push({date:localDayKey(),level:state.level,word:entry[0],correct,time:Date.now()});localStorage.setItem('cetDictationHistory',JSON.stringify(history.slice(-500)));
+    if(correct)dictationCorrectCount++;else{dictationWrongCount++;dictationQueue.push(entry)}dictationIndex++;renderDictation();
+  }
+  document.getElementById('dictationCorrect').onclick=()=>finishDictationWord(true);
+  document.getElementById('dictationWrong').onclick=()=>finishDictationWord(false);
+  window.addEventListener('resize',()=>{if(document.getElementById('vocabInkCanvas').offsetParent)resizeCanvasInkBoard(vocabInkBoard)});
+
+
   let vocabFilter='all';
   function filteredWordIndices(){
     const list=levelWords(), q=(document.getElementById('vocabSearch')?.value||'').trim().toLowerCase(), store=statusStore();
@@ -833,7 +1064,7 @@
     if(!indices.length) return toast('当前筛选没有词汇');
     let pos=indices.indexOf(currentIndex());
     if(pos<0) pos=0; else pos=(pos+delta+indices.length)%indices.length;
-    state[p]=indices[pos]; save(); renderWord(); renderVocabScreen();
+    state[p]=indices[pos]; rememberTodayWord();save(); renderWord(); renderVocabScreen();
   }
   function speakCurrentWord(){
     const word=currentEntry()[0];
@@ -852,7 +1083,7 @@
       const e=levelWords()[i], st=statusStore()[entryKey(e)]||{};
       const row=document.createElement('button'); row.className='vocab-row';
       row.innerHTML=`<span class="vocab-row-index">${e[3]}</span><span class="vocab-row-main"><b>${e[0]}</b><small>${e[2]}</small></span><span class="vocab-row-state">${st.favorite?'★':st.learning==='mastered'?'✓':st.learning==='review'?'↻':'›'}</span>`;
-      row.onclick=()=>{ state[indexProp()]=i; save(); renderWord(); renderVocabScreen(); window.scrollTo({top:0,behavior:'smooth'}); };
+      row.onclick=()=>{ state[indexProp()]=i; rememberTodayWord();save(); renderWord(); renderVocabScreen(); window.scrollTo({top:0,behavior:'smooth'}); };
       box.appendChild(row);
     });
     if(indices.length>60){ const more=document.createElement('div'); more.style.cssText='padding:12px;text-align:center;color:#7b8498;font-size:12px;'; more.textContent=`另有 ${indices.length-60} 个结果，请继续输入关键词缩小范围`; box.appendChild(more); }
@@ -880,6 +1111,7 @@
     document.getElementById('markReview').textContent=st.learning==='review'?'↻ 待复习':'还不熟';
     document.querySelectorAll('[data-vfilter]').forEach(b=>b.classList.toggle('active',b.dataset.vfilter===vocabFilter));
     renderVocabResults(filteredWordIndices());
+    refreshPracticeInk();
   }
   document.getElementById('vocabBack').onclick=()=>appBack('studyScreen');
   document.getElementById('prevVocab').onclick=()=>goVocab(-1);
@@ -888,7 +1120,7 @@
   document.getElementById('markMastered').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='mastered'?null:'mastered'}); toast('掌握状态已更新'); };
   document.getElementById('toggleFavorite').onclick=()=>{ setWordStatus({favorite:!getWordStatus().favorite}); toast(getWordStatus().favorite?'已收藏':'已取消收藏'); };
   document.getElementById('speakWord').onclick=speakCurrentWord;
-  document.getElementById('randomWord').onclick=()=>{ const list=levelWords(); state[indexProp()]=Math.floor(Math.random()*list.length); save(); renderWord(); renderVocabScreen(); };
+  document.getElementById('randomWord').onclick=()=>{ const list=levelWords(); state[indexProp()]=Math.floor(Math.random()*list.length); rememberTodayWord();save(); renderWord(); renderVocabScreen(); };
   document.getElementById('vocabSearch').addEventListener('input',()=>renderVocabScreen());
   document.querySelectorAll('[data-vfilter]').forEach(b=>b.onclick=()=>{ vocabFilter=b.dataset.vfilter; renderVocabScreen(); });
 
@@ -989,7 +1221,33 @@
   function formatClock(s){return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
   function mockQuestion(q,key,n){return `<details class="practice-prompt mock-item" data-key="${key}" open><summary><b>${n}. ${q.q}</b> <span class="source-badge">${mockAnswers[key]===undefined?'未作答':'已作答'}</span></summary>${q.opts.map((o,i)=>`<label class="option"><input type="radio" name="${key}" value="${i}" ${mockAnswers[key]===i?'checked':''}> ${String.fromCharCode(65+i)}. ${o}</label>`).join('')}</details>`}
   function saveMockDraft(){localStorage.setItem(`cetMockDraft:${levelKey()}:${mockPackIndex}`,JSON.stringify(mockAnswers))}
-  function renderMock(){const stages=['写作','听力','阅读','翻译'],box=document.getElementById('mockRunner'),p=mockPacks()[mockPackIndex];let body='';if(mockStageIndex===0)body=`<h3>写作（1题）</h3><p class="practice-prompt">${p.writing.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="写作答题区">${mockAnswers.writing||''}</textarea>`;if(mockStageIndex===1){body=`<h3>听力理解（25题）</h3><p class="practice-prompt">点击播放后请保持页面前台；若系统静音，请调高媒体音量。</p>`;for(let g=1;g<=5;g++){const qs=p.listening.filter(q=>q.group===g);body+=`<div class="card"><h3>${qs[0].kind} · 第${g}组</h3><button class="btn secondary mockSpeak" data-text="${qs[0].transcript.replace(/"/g,'&quot;')}">▶ 播放本组录音</button>${qs.map(q=>mockQuestion(q,`l${p.listening.indexOf(q)}`,p.listening.indexOf(q)+1)).join('')}</div>`}}if(mockStageIndex===2){const c=p.reading.cloze,m=p.reading.matching;body=`<h3>阅读理解（30题）</h3><h3>选词填空</h3><div class="practice-prompt"><b>短文与词库</b><p>${c.text}</p><p>${c.bank.map((w,i)=>`${String.fromCharCode(65+i)}. ${w}`).join('　')}</p></div>${c.answers.map((a,i)=>mockQuestion({q:`第 ${i+1} 空`,opts:c.bank,a,why:c.explanations[i]},`c${i}`,i+1,true)).join('')}<h3>长篇匹配</h3><div class="practice-prompt"><b>阅读材料</b><p>${m.paragraphs.join('<br><br>')}</p></div>${m.questions.map((q,i)=>mockQuestion({...q,opts:'ABCDEFGHIJ'.split('')},`m${i}`,i+11,true)).join('')}<h3>仔细阅读</h3>${p.reading.careful.map((q,i)=>`<div class="practice-prompt"><b>短文</b><p>${q.passage}</p>${mockQuestion(q,`r${i}`,i+21,true)}</div>`).join('')}`;}if(mockStageIndex===3)body=`<h3>翻译（1题）</h3><p class="practice-prompt">${p.translation.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="翻译答题区">${mockAnswers.translation||''}</textarea>`;const questionNav=(mockStageIndex===1||mockStageIndex===2)?'<div class="mock-actions"><button class="btn secondary" id="mockPrevQ">上一题</button><button class="btn secondary" id="mockNextQ">下一题</button></div>':'';box.innerHTML=`<div class="mock-banner"><div class="mock-timer" id="mockClock">${formatClock(mockRemaining)}</div><p>答案实时保存在本机</p></div><div class="mock-stage">${stages.map((s,i)=>`<span class="${i===mockStageIndex?'active':''}">${i+1} ${s}</span>`).join('')}</div><div class="card practice-card">${questionNav}${body}${questionNav}<div class="mock-actions"><button class="btn secondary" id="mockPrevStage" ${mockStageIndex===0?'disabled':''}>上一模块</button><button class="btn primary" id="mockNext">${mockStageIndex===3?'交卷':'下一模块'}</button></div><button class="btn secondary full" id="mockQuit">暂存退出</button></div>`;box.querySelectorAll('input[type=radio]').forEach(x=>x.onchange=()=>{mockAnswers[x.name]=Number(x.value);saveMockDraft()});const tx=document.getElementById('mockText');if(tx)tx.oninput=()=>{mockAnswers[mockStageIndex===0?'writing':'translation']=tx.value;saveMockDraft()};box.querySelectorAll('.mockSpeak').forEach(b=>b.onclick=()=>playMockSpeech(b.dataset.text,b));box.querySelectorAll('.mockCheck').forEach(b=>b.onclick=()=>{const selected=mockAnswers[b.dataset.key],answer=Number(b.dataset.answer),ex=box.querySelector(`[data-explain="${b.dataset.key}"]`);if(selected===undefined)return toast('请先选择答案');ex.innerHTML=`${selected===answer?'回答正确':'回答错误'} · 正确答案 ${String.fromCharCode(65+answer)}<br>${ex.innerHTML}`;ex.classList.add('show');b.disabled=true});const items=[...box.querySelectorAll('.mock-item')];const goQ=d=>{if(!items.length)return;mockFocus=Math.max(0,Math.min(items.length-1,mockFocus+d));items[mockFocus].scrollIntoView({behavior:'smooth',block:'start'});toast(`第 ${mockFocus+1} / ${items.length} 题`)};box.querySelectorAll('#mockPrevQ').forEach(b=>b.onclick=()=>goQ(-1));box.querySelectorAll('#mockNextQ').forEach(b=>b.onclick=()=>goQ(1));document.getElementById('mockPrevStage').onclick=()=>{if(mockStageIndex>0){mockStageIndex--;mockFocus=0;renderMock()}};document.getElementById('mockQuit').onclick=()=>{clearInterval(mockTimer);saveMockDraft();toast('本次模考已暂存');openMockSetup()};document.getElementById('mockNext').onclick=()=>{if(mockStageIndex<3){mockStageIndex++;mockFocus=0;renderMock()}else finishMock()};}
+  function svgPathData(points){return points?.length?'M '+points.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L '):''}
+  function redrawMockInk(board){
+    const w=Math.max(1,board.box.clientWidth),h=Math.max(1,board.box.scrollHeight);board.svg.setAttribute('viewBox',`0 0 ${w} ${h}`);board.svg.innerHTML='';
+    board.strokes.forEach(stroke=>{const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',svgPathData(stroke.points));path.setAttribute('fill','none');path.setAttribute('stroke',stroke.color);path.setAttribute('stroke-width',stroke.width);path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.setAttribute('opacity',stroke.opacity||1);board.svg.appendChild(path)});
+  }
+  async function attachMockInk(box){
+    box.style.position='relative';
+    const toolbar=document.createElement('div');toolbar.className='mock-ink-toolbar';toolbar.innerHTML='<span>✒️ 手写笔写字 · 手指正常滑动和选题</span><button class="active" data-mock-color="#3568ff">蓝笔</button><button data-mock-color="#e04855">红笔</button><button data-mock-highlight>荧光笔</button><button data-mock-eraser>橡皮</button><button data-mock-undo>撤销</button><button data-mock-clear>清空本模块</button>';box.prepend(toolbar);
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('mock-ink-layer');svg.setAttribute('aria-hidden','true');box.appendChild(svg);
+    const key=`mock:${levelKey()}:${mockPackIndex}:${mockStageIndex}`,board={box,svg,key,strokes:await loadInkData(key),drawing:null,color:'#3568ff',width:3,opacity:1,tool:'pen'};
+    redrawMockInk(board);
+    toolbar.querySelectorAll('[data-mock-color]').forEach(btn=>btn.onclick=()=>{board.color=btn.dataset.mockColor;board.width=3;board.opacity=1;board.tool='pen';toolbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));btn.classList.add('active')});
+    toolbar.querySelector('[data-mock-highlight]').onclick=e=>{board.color='#ffd23f';board.width=18;board.opacity=.38;board.tool='pen';toolbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
+    toolbar.querySelector('[data-mock-eraser]').onclick=e=>{board.tool='eraser';toolbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
+    toolbar.querySelector('[data-mock-undo]').onclick=()=>{board.strokes.pop();redrawMockInk(board);saveInkData(key,board.strokes)};
+    toolbar.querySelector('[data-mock-clear]').onclick=()=>{if(!board.strokes.length||confirm('清空本模块的全部手写笔迹？')){board.strokes=[];redrawMockInk(board);saveInkData(key,board.strokes)}};
+    const point=e=>{const r=box.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+    box.onpointerdown=e=>{
+      if(e.pointerType!=='pen'||e.target.closest('.mock-ink-toolbar'))return;
+      e.preventDefault();const p=point(e);
+      if(board.tool==='eraser'){let best=-1,distance=28;board.strokes.forEach((s,i)=>s.points.forEach(q=>{const d=Math.hypot(q.x-p.x,q.y-p.y);if(d<distance){distance=d;best=i}}));if(best>=0){board.strokes.splice(best,1);redrawMockInk(board);saveInkData(key,board.strokes)}return}
+      box.setPointerCapture?.(e.pointerId);board.drawing={color:board.color,width:board.width,opacity:board.opacity,points:[p]};board.strokes.push(board.drawing);redrawMockInk(board);
+    };
+    box.onpointermove=e=>{if(!board.drawing||e.pointerType!=='pen')return;e.preventDefault();const events=e.getCoalescedEvents?e.getCoalescedEvents():[e];events.forEach(x=>board.drawing.points.push(point(x)));redrawMockInk(board)};
+    const finish=e=>{if(!board.drawing||e.pointerType!=='pen')return;board.drawing=null;saveInkData(key,board.strokes)};box.onpointerup=finish;box.onpointercancel=finish;
+  }
+  function renderMock(){const stages=['写作','听力','阅读','翻译'],box=document.getElementById('mockRunner'),p=mockPacks()[mockPackIndex];let body='';if(mockStageIndex===0)body=`<h3>写作（1题）</h3><p class="practice-prompt">${p.writing.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="写作答题区">${mockAnswers.writing||''}</textarea>`;if(mockStageIndex===1){body=`<h3>听力理解（25题）</h3><p class="practice-prompt">点击播放后请保持页面前台；若系统静音，请调高媒体音量。</p>`;for(let g=1;g<=5;g++){const qs=p.listening.filter(q=>q.group===g);body+=`<div class="card"><h3>${qs[0].kind} · 第${g}组</h3><button class="btn secondary mockSpeak" data-text="${qs[0].transcript.replace(/"/g,'&quot;')}">▶ 播放本组录音</button>${qs.map(q=>mockQuestion(q,`l${p.listening.indexOf(q)}`,p.listening.indexOf(q)+1)).join('')}</div>`}}if(mockStageIndex===2){const c=p.reading.cloze,m=p.reading.matching;body=`<h3>阅读理解（30题）</h3><h3>选词填空</h3><div class="practice-prompt"><b>短文与词库</b><p>${c.text}</p><p>${c.bank.map((w,i)=>`${String.fromCharCode(65+i)}. ${w}`).join('　')}</p></div>${c.answers.map((a,i)=>mockQuestion({q:`第 ${i+1} 空`,opts:c.bank,a,why:c.explanations[i]},`c${i}`,i+1,true)).join('')}<h3>长篇匹配</h3><div class="practice-prompt"><b>阅读材料</b><p>${m.paragraphs.join('<br><br>')}</p></div>${m.questions.map((q,i)=>mockQuestion({...q,opts:'ABCDEFGHIJ'.split('')},`m${i}`,i+11,true)).join('')}<h3>仔细阅读</h3>${p.reading.careful.map((q,i)=>`<div class="practice-prompt"><b>短文</b><p>${q.passage}</p>${mockQuestion(q,`r${i}`,i+21,true)}</div>`).join('')}`;}if(mockStageIndex===3)body=`<h3>翻译（1题）</h3><p class="practice-prompt">${p.translation.prompt}</p><textarea class="practice-editor" id="mockText" placeholder="翻译答题区">${mockAnswers.translation||''}</textarea>`;const questionNav=(mockStageIndex===1||mockStageIndex===2)?'<div class="mock-actions"><button class="btn secondary" id="mockPrevQ">上一题</button><button class="btn secondary" id="mockNextQ">下一题</button></div>':'';box.innerHTML=`<div class="mock-banner"><div class="mock-timer" id="mockClock">${formatClock(mockRemaining)}</div><p>答案实时保存在本机</p></div><div class="mock-stage">${stages.map((s,i)=>`<span class="${i===mockStageIndex?'active':''}">${i+1} ${s}</span>`).join('')}</div><div class="card practice-card">${questionNav}${body}${questionNav}<div class="mock-actions"><button class="btn secondary" id="mockPrevStage" ${mockStageIndex===0?'disabled':''}>上一模块</button><button class="btn primary" id="mockNext">${mockStageIndex===3?'交卷':'下一模块'}</button></div><button class="btn secondary full" id="mockQuit">暂存退出</button></div>`;box.querySelectorAll('input[type=radio]').forEach(x=>x.onchange=()=>{mockAnswers[x.name]=Number(x.value);saveMockDraft()});const tx=document.getElementById('mockText');if(tx)tx.oninput=()=>{mockAnswers[mockStageIndex===0?'writing':'translation']=tx.value;saveMockDraft()};box.querySelectorAll('.mockSpeak').forEach(b=>b.onclick=()=>playMockSpeech(b.dataset.text,b));box.querySelectorAll('.mockCheck').forEach(b=>b.onclick=()=>{const selected=mockAnswers[b.dataset.key],answer=Number(b.dataset.answer),ex=box.querySelector(`[data-explain="${b.dataset.key}"]`);if(selected===undefined)return toast('请先选择答案');ex.innerHTML=`${selected===answer?'回答正确':'回答错误'} · 正确答案 ${String.fromCharCode(65+answer)}<br>${ex.innerHTML}`;ex.classList.add('show');b.disabled=true});const items=[...box.querySelectorAll('.mock-item')];const goQ=d=>{if(!items.length)return;mockFocus=Math.max(0,Math.min(items.length-1,mockFocus+d));items[mockFocus].scrollIntoView({behavior:'smooth',block:'start'});toast(`第 ${mockFocus+1} / ${items.length} 题`)};box.querySelectorAll('#mockPrevQ').forEach(b=>b.onclick=()=>goQ(-1));box.querySelectorAll('#mockNextQ').forEach(b=>b.onclick=()=>goQ(1));document.getElementById('mockPrevStage').onclick=()=>{if(mockStageIndex>0){mockStageIndex--;mockFocus=0;renderMock()}};document.getElementById('mockQuit').onclick=()=>{clearInterval(mockTimer);saveMockDraft();toast('本次模考已暂存');openMockSetup()};document.getElementById('mockNext').onclick=()=>{if(mockStageIndex<3){mockStageIndex++;mockFocus=0;renderMock()}else finishMock()};attachMockInk(box);}
   let mockGeneratedAudio=null;
   function splitSpeechText(text,max=700){const parts=[],sentences=String(text).match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[String(text)];let part='';sentences.forEach(s=>{if(part&&part.length+s.length>max){parts.push(part.trim());part=''};if(s.length>max){for(let i=0;i<s.length;i+=max)parts.push(s.slice(i,i+max).trim())}else part+=s});if(part.trim())parts.push(part.trim());return parts.filter(Boolean)}
   async function playMockSpeech(text,button){button.disabled=true;button.textContent='正在准备音频…';try{const chunks=splitSpeechText(text);const urls=[];for(let i=0;i<chunks.length;i++){button.textContent=`正在生成 ${i+1}/${chunks.length}…`;const res=await fetch('./api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:chunks[i]})});if(!res.ok){const info=await res.json().catch(()=>({}));throw Error(info.error||`云端音频生成失败 (${res.status})`)}const blob=await res.blob();urls.push(URL.createObjectURL(blob))}let index=0;const playNext=async()=>{if(index>=urls.length){urls.forEach(URL.revokeObjectURL);button.disabled=false;button.textContent='▶ 重新播放';return}mockGeneratedAudio=new Audio(urls[index++]);mockGeneratedAudio.onplay=()=>{button.textContent=`■ 正在播放 ${index}/${urls.length}`};mockGeneratedAudio.onended=playNext;mockGeneratedAudio.onerror=()=>{button.disabled=false;button.textContent='▶ 重新播放';toast('音频播放失败，请检查媒体音量')};await mockGeneratedAudio.play()};if(mockGeneratedAudio)mockGeneratedAudio.pause();await playNext()}catch(e){button.disabled=false;button.textContent='▶ 重新播放';if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.86;window.speechSynthesis.speak(u);toast('云端暂不可用，已切换为手机系统朗读')}else toast(e.message)}}
@@ -1083,8 +1341,14 @@
       box.appendChild(card);
     });
   }
-  let pdfDocument=null, pdfPageNumber=1, pdfZoom=1, pdfRenderTask=null, pdfOpenToken=0;
+  let pdfDocument=null, pdfPageNumber=1, pdfZoom=1, pdfRenderTask=null, pdfOpenToken=0, pdfInkDocumentKey='';
   let pdfJsPromise=null;
+  const pdfInkBoard=createCanvasInkBoard(document.getElementById('pdfInkCanvas'),null);
+  document.querySelectorAll('[data-pdf-ink-color]').forEach(b=>b.onclick=()=>{pdfInkBoard.color=b.dataset.pdfInkColor;pdfInkBoard.width=3;pdfInkBoard.tool='pen';document.querySelectorAll('#pdfInkTools button').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
+  document.querySelector('[data-pdf-ink-highlighter]').onclick=e=>{pdfInkBoard.color='rgba(255,205,45,.38)';pdfInkBoard.width=18;pdfInkBoard.tool='pen';document.querySelectorAll('#pdfInkTools button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
+  document.querySelector('[data-pdf-ink-tool="eraser"]').onclick=e=>{pdfInkBoard.tool='eraser';pdfInkBoard.width=24;document.querySelectorAll('#pdfInkTools button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
+  document.getElementById('pdfInkUndo').onclick=()=>undoCanvasInk(pdfInkBoard);
+  document.getElementById('pdfInkClear').onclick=()=>{if(!pdfInkBoard.strokes.length||confirm('清空这一页的全部手写笔迹？'))clearCanvasInk(pdfInkBoard)};
   function getPdfJs(){
     if(!pdfJsPromise) pdfJsPromise=new Promise((resolve,reject)=>{
       if(window.pdfjsLib){ window.pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.js'; return resolve(window.pdfjsLib); }
@@ -1097,7 +1361,7 @@
   }
   async function renderPdfPage(){
     if(!pdfDocument) return;
-    const token=pdfOpenToken, stage=document.getElementById('pdfStage'), canvas=document.getElementById('pdfCanvas');
+    const token=pdfOpenToken, stage=document.getElementById('pdfStage'), canvas=document.getElementById('pdfCanvas'),shell=document.getElementById('pdfPageShell'),ink=document.getElementById('pdfInkCanvas');
     if(pdfRenderTask) try{ pdfRenderTask.cancel(); }catch(_){ }
     const page=await pdfDocument.getPage(pdfPageNumber); if(token!==pdfOpenToken) return;
     const base=page.getViewport({scale:1});
@@ -1106,9 +1370,11 @@
     const ratio=Math.min(window.devicePixelRatio||1,2), ctx=canvas.getContext('2d');
     canvas.width=Math.floor(viewport.width*ratio); canvas.height=Math.floor(viewport.height*ratio);
     canvas.style.width=Math.floor(viewport.width)+'px'; canvas.style.height=Math.floor(viewport.height)+'px'; canvas.hidden=false;
+    shell.style.width=Math.floor(viewport.width)+'px';shell.style.height=Math.floor(viewport.height)+'px';ink.hidden=false;
     document.getElementById('pdfLoading').hidden=true;
     pdfRenderTask=page.render({canvasContext:ctx,viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0]});
     try{ await pdfRenderTask.promise; }catch(err){ if(err?.name!=='RenderingCancelledException') throw err; }
+    await setCanvasInkKey(pdfInkBoard,`pdf:${pdfInkDocumentKey}:${pdfPageNumber}`,Math.floor(viewport.width),Math.floor(viewport.height));
     document.getElementById('pdfPage').textContent=`${pdfPageNumber} / ${pdfDocument.numPages}`;
     document.getElementById('pdfPrev').disabled=pdfPageNumber<=1;
     document.getElementById('pdfNext').disabled=pdfPageNumber>=pdfDocument.numPages;
@@ -1117,14 +1383,14 @@
   async function openPdf(path,title,subtitle){
     if(!path) return toast('此资料未提供');
     if(!document.getElementById('resourceViewer').classList.contains('show'))pushSubpage('pdf-viewer');
-    examState.__last={path,title,time:Date.now(),level:state.level}; saveExamState();
+    examState.__last={path,title,time:Date.now(),level:state.level}; saveExamState();pdfInkDocumentKey=path;
     document.getElementById('viewerTitle').textContent=title;
     document.getElementById('viewerSubtitle').textContent=subtitle;
     document.getElementById('resourceViewer').classList.add('show');
     document.body.style.overflow='hidden';
     const token=++pdfOpenToken; pdfPageNumber=1; pdfZoom=1; pdfDocument=null;
-    const loading=document.getElementById('pdfLoading'), canvas=document.getElementById('pdfCanvas');
-    canvas.hidden=true; loading.hidden=false; loading.textContent='正在加载 PDF，请稍候…';
+    const loading=document.getElementById('pdfLoading'), canvas=document.getElementById('pdfCanvas'),ink=document.getElementById('pdfInkCanvas');
+    canvas.hidden=true;ink.hidden=true; loading.hidden=false; loading.textContent='正在加载 PDF，请稍候…';
     document.getElementById('pdfPage').textContent='0 / 0';
     try{
       const pdfjs=await getPdfJs(); if(token!==pdfOpenToken) return;
@@ -1168,6 +1434,9 @@
 
 
   renderHeader(); renderHero(); renderTasks(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes();
+  if(new URLSearchParams(location.search).get('preview')==='handwriting'){
+    document.body.classList.add('handwriting-preview');rememberTodayWord();navigate('vocabScreen');renderVocabScreen();setHandwritingMode('dictation');
+  }
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
