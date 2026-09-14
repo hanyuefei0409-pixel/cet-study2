@@ -268,6 +268,9 @@
     .vocab-row-main small { display:block; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .vocab-row-state { font-size:14px; }
     .vocab-row-remove { flex:0 0 auto; padding:8px 9px; border-radius:10px; color:#bd3b4b; background:#fff0f2; font-size:11px; font-weight:700; }
+    .vocab-jump { display:flex; align-items:center; gap:8px; margin:10px 0 0; padding:10px 12px; border-radius:14px; background:#f6f8fc; color:#667086; font-size:12px; }
+    .vocab-jump input { width:86px; min-height:38px; padding:0 9px; border:1px solid #d5ddea; border-radius:10px; background:#fff; text-align:center; }
+    .vocab-jump button { min-height:38px; padding:0 13px; border-radius:10px; color:#fff; background:var(--primary); font-weight:700; }
     .source-note { margin-top:14px; padding:14px 16px; color:#657087; background:#eef3ff; border-radius:17px; font-size:12px; line-height:1.7; }
     .daily-source { display:inline-block; margin-top:10px; color:var(--primary); font-size:11px; background:#eef3ff; border-radius:999px; padding:6px 9px; }
 
@@ -313,15 +316,29 @@
     .vocab-history-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .vocab-history-head h3 { margin:0; font-size:17px; }
     .vocab-history-head button { padding:7px 10px; border-radius:999px; color:#1a6c4c; background:#eaf8f1; font-size:11px; font-weight:700; }
-    .vocab-history-editor { display:flex; align-items:center; gap:8px; margin:-2px 0 12px; padding:10px 11px; border-radius:13px; background:#f6f8fc; color:#526078; font-size:12px; }
+    .vocab-history-editor { margin:-2px 0 12px; padding:12px; border-radius:13px; background:#f6f8fc; color:#526078; font-size:12px; }
     .vocab-history-editor[hidden] { display:none!important; }
-    .vocab-history-editor input { width:72px; min-height:36px; padding:0 8px; border:1px solid #d5ddea; border-radius:9px; background:#fff; text-align:center; }
+    .vocab-history-editor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
+    .vocab-history-editor input { flex:1; min-width:0; min-height:38px; padding:0 10px; border:1px solid #d5ddea; border-radius:9px; background:#fff; }
     .vocab-history-editor button { min-height:36px; padding:0 11px; border-radius:9px; background:#e8eefc; color:#37558f; font-weight:700; }
-    .vocab-history-editor .save { margin-left:auto; color:#fff; background:var(--primary); }
+    .history-word-list { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+    .history-word-chip { display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:0 6px 0 10px; border-radius:10px; background:#fff; color:var(--text); }
+    .history-word-chip button { min-height:26px; padding:0 7px; color:#bd3b4b; background:#fff0f2; }
+    .history-word-search { display:flex; align-items:center; gap:7px; }
+    .history-word-results { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+    .history-word-results button { min-height:32px; background:#eef3ff; }
     .vocab-history-list { display:flex; flex-direction:column; gap:9px; }
-    .vocab-history-row { display:grid; grid-template-columns:78px 54px 1fr; align-items:start; gap:9px; padding:10px 11px; border-radius:13px; background:#f6f8fc; color:#526078; font-size:12px; }
+    .vocab-history-row { display:grid; grid-template-columns:78px 54px minmax(0,1fr) auto; align-items:start; gap:9px; padding:10px 11px; border-radius:13px; background:#f6f8fc; color:#526078; font-size:12px; }
     .vocab-history-row b { color:var(--text); }
     .vocab-history-row small { color:var(--muted); line-height:1.55; }
+    .vocab-history-row button { padding:5px 8px; border-radius:8px; color:#37558f; background:#e8eefc; font-size:11px; font-weight:700; }
+    .practice-ink-section { margin-top:14px; padding:14px 0 2px; border:1px solid #dce3ef; border-radius:17px; background:#fff; }
+    .practice-ink-title { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px 11px; }
+    .practice-ink-title b { font-size:14px; }
+    .practice-ink-title span { color:#1a6c4c; font-size:11px; font-weight:700; }
+    .practice-ink-section .ink-surface { margin:0 12px; }
+    .practice-ink-section .ink-canvas { height:420px; }
+    .practice-ink-section .ink-toolbar { padding:11px 12px; }
 
     @media (min-width: 700px) {
       body { padding:20px 0; }
@@ -526,6 +543,7 @@
         <input id="vocabSearch" type="search" placeholder="搜索英文单词或中文释义" autocomplete="off" />
         <button class="small-action" id="randomWord">随机</button>
       </div>
+      <div class="vocab-jump"><span>跳转到词表第</span><input id="vocabJumpNumber" type="number" min="1" inputmode="numeric" aria-label="要跳转到的单词序号"><span id="vocabJumpTotal">/ 4449</span><button id="vocabJumpButton" type="button">跳转</button></div>
 
       <div class="tablet-mode-hint">✒️ 平板模式：手写笔负责书写，手指仍可上下滑动页面。</div>
       <div class="tablet-vocab-layout">
@@ -590,8 +608,8 @@
       </div>
 
       <section class="card vocab-history" id="vocabStudyHistory">
-        <div class="vocab-history-head"><h3>学习记录</h3><button id="todayLearnedCount" type="button">今天 0 词 · 修改</button></div>
-        <div class="vocab-history-editor" id="vocabHistoryEditor" hidden><span>今天学习了</span><input id="todayLearnedInput" type="number" min="0" inputmode="numeric" aria-label="今天学习的单词数"><span>词</span><button class="save" id="saveTodayLearned" type="button">保存</button><button id="cancelTodayLearned" type="button">取消</button></div>
+        <div class="vocab-history-head"><h3>学习记录</h3><button id="todayLearnedCount" type="button">今天 0 词 · 修改单词</button></div>
+        <div class="vocab-history-editor" id="vocabHistoryEditor" hidden><div class="vocab-history-editor-head"><b id="historyEditorTitle">修改今天学习的单词</b><button id="closeHistoryEditor" type="button">完成</button></div><div class="history-word-list" id="historyWordList"></div><div class="history-word-search"><input id="historyWordSearch" type="search" placeholder="输入英文或中文，添加具体单词" autocomplete="off"></div><div class="history-word-results" id="historyWordResults"></div></div>
         <div class="vocab-history-list" id="vocabHistoryList"></div>
       </section>
 
@@ -877,12 +895,12 @@
   function pushSubpage(view,extra={}){if(!restoringHistory)history.pushState({screen:document.querySelector('.screen.active')?.id||'homeScreen',view,...extra},'')}
   function appBack(fallback='homeScreen'){if(history.length>1)history.back();else{restoringHistory=true;navigate(fallback);restoringHistory=false}}
   document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.nav)));
-  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ if(getWordStatus().learning==='mastered'){const next=nextUnmasteredIndex();if(next>=0)state[indexProp()]=next}rememberTodayWord();save();navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
+  document.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>{ const m=b.dataset.module; if(m==='vocab'){ if(getWordStatus().learning==='mastered'){const next=nextUnmasteredIndex();if(next>=0)state[indexProp()]=next}save();navigate('vocabScreen'); renderVocabScreen(); } else if(m==='listening'){ openExamLibrary('listening'); } else if(m==='mock'){ openMockSetup(); } else if(['writing','translation','reading'].includes(m)){ openPractice(m); } });
 
   document.getElementById('resetTasks').onclick=()=>{ state.tasks=defaults.tasks.slice(); state.taskDate=localDayKey(); save(); renderTasks(); renderHero(); toast('今日任务已重置'); };
   function nextWord(){
     const list=levelWords(),p=indexProp();if(!list.length)return;
-    rememberTodayWord();const next=nextUnmasteredIndex();if(next<0)return toast('全部词汇都已掌握');state[p]=next;rememberTodayWord();save();renderWord();renderVocabScreen();
+    rememberTodayWord();const next=nextUnmasteredIndex();if(next<0)return toast('全部词汇都已掌握');state[p]=next;save();renderWord();renderVocabScreen();
   }
   document.getElementById('nextWordTop').onclick=nextWord;
   document.getElementById('dontKnow').onclick=()=>{setWordStatus({learning:'review'});nextWord()};
@@ -1091,28 +1109,39 @@
     Object.entries(statusStore()).forEach(([id,status])=>{if(valid.has(String(id))&&status?.learning)ids.add(String(id))});
     return ids;
   }
-  function setTodayLearnedCount(value){
-    const list=levelWords(),log=dailyWordLog(),key=`${localDayKey()}:${state.level}`,byId=new Map(list.map((entry,index)=>[entryKey(entry),{entry,index}]));
-    const requested=Math.max(0,Math.min(list.length,Math.floor(Number(value)||0))),existing=[...new Set((log[key]||[]).map(String))].filter(id=>byId.has(id));
-    if(requested<existing.length)existing.length=requested;
-    if(requested>existing.length){
-      const used=new Set(existing),start=existing.length?byId.get(existing[existing.length-1]).index:currentIndex();
-      for(let step=0;step<list.length&&existing.length<requested;step++){const entry=list[(start+step)%list.length],id=entryKey(entry);if(!used.has(id)&&statusStore()[id]?.learning!=='mastered'){used.add(id);existing.push(id)}}
-      for(let step=0;step<list.length&&existing.length<requested;step++){const id=entryKey(list[step]);if(!used.has(id)){used.add(id);existing.push(id)}}
-    }
-    if(existing.length)log[key]=existing;else delete log[key];localStorage.setItem('cetDailyWordLog',JSON.stringify(log));
-    renderVocabHistory();renderVocabScreen();if(handwritingMode==='dictation')startDictation();
+  let historyEditingDate=localDayKey();
+  function historyDateKey(date=historyEditingDate){return `${date}:${state.level}`}
+  function updateHistoryWords(date,change){
+    const log=dailyWordLog(),key=historyDateKey(date),valid=new Set(levelWords().map(entryKey)),ids=[...new Set((log[key]||[]).map(String))].filter(id=>valid.has(id));change(ids);
+    if(ids.length)log[key]=ids;else delete log[key];localStorage.setItem('cetDailyWordLog',JSON.stringify(log));
+    renderVocabScreen();if(date===localDayKey()&&handwritingMode==='dictation')startDictation();
+  }
+  function renderHistoryWordEditor(){
+    const editor=document.getElementById('vocabHistoryEditor');if(!editor||editor.hidden)return;
+    const list=levelWords(),byId=new Map(list.map(e=>[entryKey(e),e])),ids=(dailyWordLog()[historyDateKey()]||[]).map(String).filter(id=>byId.has(id)),words=document.getElementById('historyWordList');
+    document.getElementById('historyEditorTitle').textContent=`修改${historyEditingDate===localDayKey()?'今天':historyEditingDate}学习的单词（${ids.length}词）`;words.innerHTML='';
+    if(!ids.length)words.innerHTML='<small>这一天暂时没有单词，可在下方搜索添加。</small>';
+    ids.forEach(id=>{const chip=document.createElement('span');chip.className='history-word-chip';chip.innerHTML=`<span>${byId.get(id)[0]}</span><button type="button" aria-label="从记录移除 ${byId.get(id)[0]}">删除</button>`;chip.querySelector('button').onclick=()=>updateHistoryWords(historyEditingDate,items=>{const i=items.indexOf(id);if(i>=0)items.splice(i,1)});words.appendChild(chip)});
+    renderHistoryWordSearch();
+  }
+  function renderHistoryWordSearch(){
+    const input=document.getElementById('historyWordSearch'),box=document.getElementById('historyWordResults');if(!input||!box)return;const q=input.value.trim().toLowerCase();box.innerHTML='';if(!q)return;
+    const existing=new Set((dailyWordLog()[historyDateKey()]||[]).map(String));levelWords().map((entry,index)=>({entry,index})).filter(({entry})=>!existing.has(entryKey(entry))&&(entry[0].toLowerCase().includes(q)||entry[2].toLowerCase().includes(q))).slice(0,10).forEach(({entry})=>{const b=document.createElement('button');b.type='button';b.textContent=`＋ ${entry[0]} · ${entry[2].slice(0,18)}`;b.onclick=()=>updateHistoryWords(historyEditingDate,items=>items.push(entryKey(entry)));box.appendChild(b)});
+  }
+  function openHistoryEditor(date=localDayKey()){
+    historyEditingDate=date;const editor=document.getElementById('vocabHistoryEditor'),input=document.getElementById('historyWordSearch');editor.hidden=false;input.value='';renderHistoryWordEditor();input.focus();
   }
   function renderVocabHistory(){
     const badge=document.getElementById('todayLearnedCount'),box=document.getElementById('vocabHistoryList');if(!badge||!box)return;
     const log=dailyWordLog(),suffix=`:${state.level}`,list=levelWords(),byId=new Map(list.map(e=>[entryKey(e),e]));
     const rows=Object.keys(log).filter(k=>k.endsWith(suffix)&&Array.isArray(log[k])&&log[k].length).map(k=>({date:k.slice(0,-suffix.length),ids:[...new Set(log[k].map(String))]})).sort((a,b)=>b.date.localeCompare(a.date));
-    const today=rows.find(r=>r.date===localDayKey());badge.textContent=`今天 ${today?.ids.length||0} 词 · 修改`;box.innerHTML='';
-    if(!rows.length){box.innerHTML='<div class="vocab-history-row"><small>还没有学习记录，打开单词卡学习后会自动保存。</small></div>';return}
+    const today=rows.find(r=>r.date===localDayKey());badge.textContent=`今天 ${today?.ids.length||0} 词 · 修改单词`;box.innerHTML='';
+    if(!rows.length){box.innerHTML='<div class="vocab-history-row"><small>还没有学习记录，点击“下一个”后会自动保存当前单词。</small></div>';renderHistoryWordEditor();return}
     rows.slice(0,14).forEach(row=>{
       const words=row.ids.map(id=>byId.get(id)?.[0]).filter(Boolean),el=document.createElement('div');el.className='vocab-history-row';
-      el.innerHTML=`<b>${row.date===localDayKey()?'今天':row.date.slice(5).replace('-','月')+'日'}</b><span>${words.length} 词</span><small>${words.slice(-8).join('、')}${words.length>8?' 等':''}</small>`;box.appendChild(el);
+      el.innerHTML=`<b>${row.date===localDayKey()?'今天':row.date.slice(5).replace('-','月')+'日'}</b><span>${words.length} 词</span><small>${words.slice(-8).join('、')}${words.length>8?' 等':''}</small><button type="button">修改</button>`;el.querySelector('button').onclick=()=>openHistoryEditor(row.date);box.appendChild(el);
     });
+    renderHistoryWordEditor();
   }
   const vocabInkBoard=createCanvasInkBoard(document.getElementById('vocabInkCanvas'),document.getElementById('vocabInkSurface'));
   attachFingerScroll(document.getElementById('vocabInkCanvas'));
@@ -1177,14 +1206,15 @@
   }
   function goVocab(delta){
     const p=indexProp();
+    if(delta>0)rememberTodayWord();
     if(vocabFilter==='all'){
-      const next=nextUnmasteredIndex(currentIndex(),delta);if(next<0)return toast('全部词汇都已掌握');state[p]=next;rememberTodayWord();save();renderWord();renderVocabScreen();return;
+      const next=nextUnmasteredIndex(currentIndex(),delta);if(next<0)return toast('全部词汇都已掌握');state[p]=next;save();renderWord();renderVocabScreen();return;
     }
     const indices=filteredWordIndices();
     if(!indices.length) return toast('当前筛选没有词汇');
     let pos=indices.indexOf(currentIndex());
     if(pos<0) pos=0; else pos=(pos+delta+indices.length)%indices.length;
-    state[p]=indices[pos]; rememberTodayWord();save(); renderWord(); renderVocabScreen();
+    state[p]=indices[pos];save(); renderWord(); renderVocabScreen();
   }
   function speakCurrentWord(){
     const word=currentEntry()[0];
@@ -1203,7 +1233,7 @@
       const entry=levelWords()[i],key=entryKey(entry),st=statusStore()[key]||{};
       const row=document.createElement('div'); row.className='vocab-row';
       const open=document.createElement('button');open.type='button';open.className='vocab-row-open';open.innerHTML=`<span class="vocab-row-index">${entry[3]}</span><span class="vocab-row-main"><b>${entry[0]}</b><small>${entry[2]}</small></span><span class="vocab-row-state">${st.favorite?'★':st.learning==='mastered'?'✓':st.learning==='review'?'↻':'›'}</span>`;
-      open.onclick=()=>{ state[indexProp()]=i; rememberTodayWord();save(); renderWord(); renderVocabScreen(); window.scrollTo({top:0,behavior:'smooth'}); };row.appendChild(open);
+      open.onclick=()=>{ state[indexProp()]=i;save(); renderWord(); renderVocabScreen(); window.scrollTo({top:0,behavior:'smooth'}); };row.appendChild(open);
       if(vocabFilter==='mastered'){
         const remove=document.createElement('button');remove.type='button';remove.className='vocab-row-remove';remove.textContent='移出已掌握';
         remove.onclick=()=>{const store=statusStore(),next={...(store[key]||{})};delete next.learning;if(next.favorite)store[key]=next;else delete store[key];save();renderWord();renderVocabScreen()};row.appendChild(remove);
@@ -1220,6 +1250,7 @@
     document.getElementById('vocabTitle').textContent=`${state.level==='CET-4'?'四级':'六级'}完整词库`;
     document.getElementById('vocabSubtitle').textContent=`已掌握长期保留 · 默认继续学习未掌握词 · 共 ${list.length} 词`;
     document.getElementById('vocabTotal').textContent=list.length;
+    document.getElementById('vocabJumpTotal').textContent=`/ ${list.length}`;
     document.getElementById('vocabMastered').textContent=mastered;
     document.getElementById('vocabReview').textContent=review;
     document.getElementById('vocabWord').textContent=e[0];
@@ -1245,11 +1276,14 @@
   document.getElementById('markReview').onclick=()=>setWordStatus({learning:getWordStatus().learning==='review'?null:'review'});
   document.getElementById('markMastered').onclick=()=>{const wasMastered=getWordStatus().learning==='mastered';setWordStatus({learning:wasMastered?null:'mastered'});if(!wasMastered&&vocabFilter==='all')goVocab(1)};
   document.getElementById('toggleFavorite').onclick=()=>{ setWordStatus({favorite:!getWordStatus().favorite}); toast(getWordStatus().favorite?'已收藏':'已取消收藏'); };
-  document.getElementById('todayLearnedCount').onclick=()=>{const editor=document.getElementById('vocabHistoryEditor'),input=document.getElementById('todayLearnedInput');input.value=todayWordEntries().length;editor.hidden=false;input.focus();input.select()};
-  document.getElementById('cancelTodayLearned').onclick=()=>document.getElementById('vocabHistoryEditor').hidden=true;
-  document.getElementById('saveTodayLearned').onclick=()=>{setTodayLearnedCount(document.getElementById('todayLearnedInput').value);document.getElementById('vocabHistoryEditor').hidden=true};
+  document.getElementById('todayLearnedCount').onclick=()=>openHistoryEditor();
+  document.getElementById('closeHistoryEditor').onclick=()=>document.getElementById('vocabHistoryEditor').hidden=true;
+  document.getElementById('historyWordSearch').addEventListener('input',renderHistoryWordSearch);
   document.getElementById('speakWord').onclick=speakCurrentWord;
-  document.getElementById('randomWord').onclick=()=>{const indices=filteredWordIndices();if(!indices.length)return toast(vocabFilter==='all'?'全部词汇都已掌握':'当前筛选没有词汇');state[indexProp()]=indices[Math.floor(Math.random()*indices.length)];rememberTodayWord();save();renderWord();renderVocabScreen();};
+  document.getElementById('randomWord').onclick=()=>{const indices=filteredWordIndices();if(!indices.length)return toast(vocabFilter==='all'?'全部词汇都已掌握':'当前筛选没有词汇');state[indexProp()]=indices[Math.floor(Math.random()*indices.length)];save();renderWord();renderVocabScreen();};
+  function jumpToVocab(){const input=document.getElementById('vocabJumpNumber'),list=levelWords(),n=Math.floor(Number(input.value));if(!n||n<1||n>list.length)return toast(`请输入 1 到 ${list.length} 之间的序号`);const index=list.findIndex(entry=>Number(entry[3])===n);state[indexProp()]=index>=0?index:n-1;save();renderWord();renderVocabScreen();input.value='';document.getElementById('vocabWord').scrollIntoView({behavior:'smooth',block:'center'})}
+  document.getElementById('vocabJumpButton').onclick=jumpToVocab;
+  document.getElementById('vocabJumpNumber').addEventListener('keydown',e=>{if(e.key==='Enter')jumpToVocab()});
   document.getElementById('vocabSearch').addEventListener('input',()=>renderVocabScreen());
   document.querySelectorAll('[data-vfilter]').forEach(b=>b.onclick=()=>{ vocabFilter=b.dataset.vfilter; renderVocabScreen(); });
 
@@ -1313,7 +1347,7 @@
 
 
   // ===== 原创专项训练与考场模拟 =====
-  let practiceType='writing', practiceCurrent=null, mockTimer=null, mockRemaining=0, mockStageIndex=0, mockPackIndex=0, mockAnswers={}, mockFocus=0;
+  let practiceType='writing', practiceCurrent=null, practiceInkBoard=null, mockTimer=null, mockRemaining=0, mockStageIndex=0, mockPackIndex=0, mockAnswers={}, mockFocus=0;
   function levelKey(){return state.level==='CET-6'?'cet6':'cet4'}
   function practiceData(type=practiceType){const base=window.CET_PRACTICE?.[levelKey()]?.[type]||[],packs=window.CET_FULL_MOCKS?.[levelKey()]||[];if(type==='writing')return [...base,...packs.map((p,i)=>({id:`${p.id}-writing`,type:'writing',title:`全真写作 ${i+1}`,prompt:p.writing.prompt,minutes:30,outline:p.writing.reference,keywords:p.theme}))];if(type==='translation')return [...base,...packs.map((p,i)=>({id:`${p.id}-translation`,type:'translation',title:`全真翻译 ${i+1}`,prompt:p.translation.prompt,minutes:30,reference:p.translation.reference}))];return base}
   function openPractice(type='writing'){
@@ -1335,8 +1369,12 @@
   function openPracticeEditor(x){
     pushSubpage('practice-editor',{practiceType});
     practiceCurrent=x; const saved=localStorage.getItem(`cetPractice:${x.id}`)||'', editor=document.getElementById('practiceEditor'); editor.hidden=false; document.getElementById('practiceList').hidden=true; document.getElementById('practiceTabs').hidden=true;
-    editor.innerHTML=`<h3>${x.title}</h3><div class="practice-prompt">${x.prompt}</div><div class="practice-tip">建议用时 ${x.minutes} 分钟 · 内容自动保存在本机</div><textarea class="practice-editor" id="practiceAnswer" placeholder="在这里输入你的${x.type==='writing'?'作文':'译文'}…"></textarea><div class="mock-actions"><button class="btn secondary" id="practiceSave">保存草稿</button><button class="btn primary" id="practiceReference">完成并自评</button></div><div class="reference-box" id="practiceReferenceBox">${x.type==='writing'?`参考结构：${x.outline}<br>建议词组：${x.keywords}`:`参考译文：${x.reference}`}<br><small>参考答案用于自评，不是唯一表达。</small></div>`;
+    editor.innerHTML=`<h3>${x.title}</h3><div class="practice-prompt">${x.prompt}</div><div class="practice-tip">建议用时 ${x.minutes} 分钟 · 键盘内容与手写笔迹都会自动保存在本机</div><textarea class="practice-editor" id="practiceAnswer" placeholder="在这里输入你的${x.type==='writing'?'作文':'译文'}…"></textarea><section class="practice-ink-section"><div class="practice-ink-title"><b>✒️ 手写${x.type==='writing'?'作文':'翻译'}区</b><span>笔写字 · 手指滑动</span></div><div class="ink-surface" id="practiceInkSurface"><canvas class="ink-canvas" id="practiceInkCanvas" aria-label="${x.type==='writing'?'作文':'翻译'}手写区"></canvas></div><div class="ink-toolbar" id="practiceInkToolbar"><button class="ink-color blue active" data-practice-ink-color="#3568ff" aria-label="蓝色笔"></button><button class="ink-color black" data-practice-ink-color="#172033" aria-label="黑色笔"></button><button class="ink-color red" data-practice-ink-color="#e04855" aria-label="红色笔"></button><button data-practice-ink-tool="eraser">橡皮</button><button data-practice-ink-undo>撤销</button><button data-practice-ink-clear>清空</button></div></section><div class="mock-actions"><button class="btn secondary" id="practiceSave">保存草稿</button><button class="btn primary" id="practiceReference">完成并自评</button></div><div class="reference-box" id="practiceReferenceBox">${x.type==='writing'?`参考结构：${x.outline}<br>建议词组：${x.keywords}`:`参考译文：${x.reference}`}<br><small>参考答案用于自评，不是唯一表达。</small></div>`;
     document.getElementById('practiceAnswer').value=saved; document.getElementById('practiceAnswer').oninput=e=>localStorage.setItem(`cetPractice:${x.id}`,e.target.value);
+    practiceInkBoard=createCanvasInkBoard(document.getElementById('practiceInkCanvas'),document.getElementById('practiceInkSurface'));attachFingerScroll(document.getElementById('practiceInkCanvas'));setCanvasInkKey(practiceInkBoard,`practice:${state.level}:${x.id}`,undefined,420);
+    editor.querySelectorAll('[data-practice-ink-color]').forEach(btn=>btn.onclick=()=>{practiceInkBoard.color=btn.dataset.practiceInkColor;practiceInkBoard.width=3;practiceInkBoard.tool='pen';editor.querySelectorAll('#practiceInkToolbar button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')});
+    editor.querySelector('[data-practice-ink-tool="eraser"]').onclick=e=>{practiceInkBoard.tool='eraser';practiceInkBoard.width=24;editor.querySelectorAll('#practiceInkToolbar button').forEach(b=>b.classList.remove('active'));e.currentTarget.classList.add('active')};
+    editor.querySelector('[data-practice-ink-undo]').onclick=()=>undoCanvasInk(practiceInkBoard);editor.querySelector('[data-practice-ink-clear]').onclick=()=>clearCanvasInk(practiceInkBoard);
     document.getElementById('practiceSave').onclick=()=>{localStorage.setItem(`cetPractice:${x.id}`,document.getElementById('practiceAnswer').value);toast('草稿已保存在本机')};
     document.getElementById('practiceReference').onclick=()=>{document.getElementById('practiceReferenceBox').classList.add('show');toast('请按结构、准确性和语言三项自评')}; editor.scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -1566,7 +1604,7 @@
 
   renderHeader(); renderHero(); renderTasks(); renderWord(); renderVocabScreen(); renderLevelContent(); renderQuiz(); renderMistakes();
   if(new URLSearchParams(location.search).get('preview')==='handwriting'){
-    document.body.classList.add('handwriting-preview');rememberTodayWord();navigate('vocabScreen');renderVocabScreen();setHandwritingMode('dictation');
+    document.body.classList.add('handwriting-preview');navigate('vocabScreen');renderVocabScreen();setHandwritingMode('dictation');
   }
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
