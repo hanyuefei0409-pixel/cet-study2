@@ -796,6 +796,7 @@
     if(!store[key].learning && !store[key].favorite) delete store[key];
     save(); renderWord(); renderVocabScreen();
   }
+  function unmasteredIndices(){const store=statusStore(),out=[];levelWords().forEach((entry,i)=>{if(store[entryKey(entry)]?.learning!=='mastered')out.push(i)});return out}
   function nextUnmasteredIndex(from=currentIndex(),direction=1){
     const list=levelWords(),store=statusStore();if(!list.length)return-1;
     for(let step=1;step<=list.length;step++){const i=(from+direction*step+list.length)%list.length;if(store[entryKey(list[i])]?.learning!=='mastered')return i}
@@ -853,7 +854,7 @@
     document.getElementById('phoneticText').textContent=prettyPhonetic(w[1]);
     document.getElementById('meaningText').textContent=w[2];
     document.getElementById('exampleText').textContent='词义来自你上传的词汇表';
-    document.getElementById('dailyWordSource').textContent=`${state.level==='CET-4'?'四级':'六级'}词汇 · 原序号${w[3]}`;
+    document.getElementById('dailyWordSource').textContent=`${state.level==='CET-4'?'四级':'六级'}词汇 · 当前待学习`;
     document.getElementById('vocabModuleCount').textContent=`${meta.count||levelWords().length}词`;
   }
   let restoringHistory=false;
@@ -876,8 +877,8 @@
     rememberTodayWord();const next=nextUnmasteredIndex();if(next<0)return toast('全部词汇都已掌握');state[p]=next;rememberTodayWord();save();renderWord();renderVocabScreen();
   }
   document.getElementById('nextWordTop').onclick=nextWord;
-  document.getElementById('dontKnow').onclick=()=>{ setWordStatus({learning:'review'}); nextWord(); toast('已加入复习队列'); };
-  document.getElementById('knowWord').onclick=()=>{ setWordStatus({learning:'mastered'}); nextWord(); toast('掌握度已更新'); };
+  document.getElementById('dontKnow').onclick=()=>{setWordStatus({learning:'review'});nextWord()};
+  document.getElementById('knowWord').onclick=()=>{setWordStatus({learning:'mastered'});nextWord()};
 
   let quizIndex=0, quizSelected=null, quizSubmitted=false;
   const quizMistakes=JSON.parse(localStorage.getItem('cetQuizMistakes')||'[]');
@@ -1177,9 +1178,10 @@
     document.getElementById('vocabPhonetic').textContent=prettyPhonetic(e[1]);
     document.getElementById('vocabMeaning').textContent=e[2];
     document.getElementById('vocabSourceBadge').textContent=`${state.level} · ${meta.phonetic||''}`;
-    document.getElementById('vocabPageSource').textContent=`来源：${state.level==='CET-4'?'四级':'六级'}词汇表第${e[4]}页 · 原序号${e[3]}`;
-    document.getElementById('wordPosition').textContent=`${currentIndex()+1} / ${list.length}`;
-    document.getElementById('wordProgressBar').style.width=`${(currentIndex()+1)/list.length*100}%`;
+    const learningIndices=unmasteredIndices(),learningPosition=learningIndices.indexOf(currentIndex());
+    document.getElementById('vocabPageSource').textContent=vocabFilter==='all'?`来源：${state.level==='CET-4'?'四级':'六级'}词汇表第${e[4]}页 · 当前待学习`:`来源：${state.level==='CET-4'?'四级':'六级'}词汇表第${e[4]}页 · 原序号${e[3]}`;
+    document.getElementById('wordPosition').textContent=vocabFilter==='all'?`待学习 ${Math.max(0,learningPosition)+1} / ${learningIndices.length}`:`原词表 ${currentIndex()+1} / ${list.length}`;
+    document.getElementById('wordProgressBar').style.width=vocabFilter==='all'?`${learningIndices.length?((Math.max(0,learningPosition)+1)/learningIndices.length*100):100}%`:`${(currentIndex()+1)/list.length*100}%`;
     document.getElementById('wordStateText').textContent=st.learning==='mastered'?'已掌握':st.learning==='review'?'待复习':'尚未标记';
     const fav=document.getElementById('toggleFavorite'); fav.classList.toggle('active',!!st.favorite); fav.textContent=st.favorite?'★ 已收藏':'☆ 收藏';
     document.getElementById('markMastered').textContent=st.learning==='mastered'?'✓ 已掌握':'已掌握';
@@ -1192,8 +1194,8 @@
   document.getElementById('vocabBack').onclick=()=>appBack('studyScreen');
   document.getElementById('prevVocab').onclick=()=>goVocab(-1);
   document.getElementById('nextVocab').onclick=()=>goVocab(1);
-  document.getElementById('markReview').onclick=()=>{ setWordStatus({learning:getWordStatus().learning==='review'?null:'review'}); toast('复习状态已更新'); };
-  document.getElementById('markMastered').onclick=()=>{const wasMastered=getWordStatus().learning==='mastered';setWordStatus({learning:wasMastered?null:'mastered'});if(!wasMastered&&vocabFilter==='all')goVocab(1);toast(wasMastered?'已取消掌握标记':'已长期保存，并进入下一个未掌握词'); };
+  document.getElementById('markReview').onclick=()=>setWordStatus({learning:getWordStatus().learning==='review'?null:'review'});
+  document.getElementById('markMastered').onclick=()=>{const wasMastered=getWordStatus().learning==='mastered';setWordStatus({learning:wasMastered?null:'mastered'});if(!wasMastered&&vocabFilter==='all')goVocab(1)};
   document.getElementById('toggleFavorite').onclick=()=>{ setWordStatus({favorite:!getWordStatus().favorite}); toast(getWordStatus().favorite?'已收藏':'已取消收藏'); };
   document.getElementById('speakWord').onclick=speakCurrentWord;
   document.getElementById('randomWord').onclick=()=>{const indices=filteredWordIndices();if(!indices.length)return toast(vocabFilter==='all'?'全部词汇都已掌握':'当前筛选没有词汇');state[indexProp()]=indices[Math.floor(Math.random()*indices.length)];rememberTodayWord();save();renderWord();renderVocabScreen();};
@@ -1312,7 +1314,7 @@
     toolbar.querySelector('[data-mock-highlight]').onclick=e=>{board.color='#ffd23f';board.width=18;board.opacity=.38;board.tool='pen';toolbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
     toolbar.querySelector('[data-mock-eraser]').onclick=e=>{board.tool='eraser';toolbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
     toolbar.querySelector('[data-mock-undo]').onclick=()=>{board.strokes.pop();redrawMockInk(board);saveInkData(key,board.strokes)};
-    toolbar.querySelector('[data-mock-clear]').onclick=()=>{if(!board.strokes.length||confirm('清空本模块的全部手写笔迹？')){board.strokes=[];redrawMockInk(board);saveInkData(key,board.strokes)}};
+    toolbar.querySelector('[data-mock-clear]').onclick=()=>{board.strokes=[];redrawMockInk(board);saveInkData(key,board.strokes)};
     const point=e=>{const r=box.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
     box.onpointerdown=e=>{
       if(e.pointerType!=='pen'||e.target.closest('.mock-ink-toolbar'))return;
@@ -1425,7 +1427,7 @@
   document.querySelector('[data-pdf-ink-highlighter]').onclick=e=>{pdfInkBoard.color='rgba(255,205,45,.38)';pdfInkBoard.width=18;pdfInkBoard.tool='pen';document.querySelectorAll('#pdfInkTools button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
   document.querySelector('[data-pdf-ink-tool="eraser"]').onclick=e=>{pdfInkBoard.tool='eraser';pdfInkBoard.width=24;document.querySelectorAll('#pdfInkTools button').forEach(x=>x.classList.remove('active'));e.currentTarget.classList.add('active')};
   document.getElementById('pdfInkUndo').onclick=()=>undoCanvasInk(pdfInkBoard);
-  document.getElementById('pdfInkClear').onclick=()=>{if(!pdfInkBoard.strokes.length||confirm('清空这一页的全部手写笔迹？'))clearCanvasInk(pdfInkBoard)};
+  document.getElementById('pdfInkClear').onclick=()=>clearCanvasInk(pdfInkBoard);
   function getPdfJs(){
     if(!pdfJsPromise) pdfJsPromise=new Promise((resolve,reject)=>{
       if(window.pdfjsLib){ window.pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.js'; return resolve(window.pdfjsLib); }
